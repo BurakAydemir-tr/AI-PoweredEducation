@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\AI.PoweredEducation.Core\AI.PoweredEducation.Core.csproj" />
+    <ProjectReference Include="..\AI.PoweredEducation.Entity\AI.PoweredEducation.Entity.csproj" />
+    <ProjectReference Include="..\AI.PoweredEducation.DataAccess\AI.PoweredEducation.DataAccess.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
