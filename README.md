@@ -9,7 +9,7 @@ Projenin ürün, mimari ve teknik kararları [`docs`](docs) klasöründeki dokü
 ## Teknoloji ve mimari
 
 - C# ve ASP.NET Core Web API
-- .NET 8 LTS
+- .NET 9
 - N-Layer Architecture
 - PostgreSQL ve Entity Framework Core (ileriki aşamalar için onaylanmış teknoloji)
 
@@ -43,5 +43,30 @@ Repository şu anda yalnızca proje iskeletini içerir. Entity, DbContext, contr
 ## Derleme
 
 ```powershell
+dotnet restore AI.PoweredEducation.sln --source https://api.nuget.org/v3/index.json
 dotnet build AI.PoweredEducation.sln
 ```
+
+## Yerel yapılandırma
+
+API aşağıdaki değerleri environment variable veya güvenli bir configuration provider üzerinden bekler:
+
+```text
+ConnectionStrings__DefaultConnection
+Jwt__Secret
+```
+
+`Jwt__Secret` en az 32 byte olmalıdır. Secret ve veritabanı parolaları repository'ye eklenmemelidir.
+
+## Veritabanı
+
+Repository-local EF Core aracını ve migration'ları çalıştırmak için:
+
+```powershell
+dotnet tool restore
+dotnet tool run dotnet-ef database update --project src/Backend/AI.PoweredEducation.DataAccess --startup-project src/Backend/AI.PoweredEducation.API
+```
+
+## AI provider durumu
+
+`IAiProvider` ve `IAiService` sözleşmeleri hazırdır. OpenAI ve Gemini implementasyonları, kullanılacak modeller kesinleştirildikten sonra eklenecektir.

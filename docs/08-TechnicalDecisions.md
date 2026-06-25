@@ -38,14 +38,12 @@ ASP.NET Core Web API
 
 **Decision**
 
-.NET 8 LTS
+.NET 9
 
 **Reason**
 
-* Long Term Support (LTS)
-* Stable ecosystem
-* Strong community support
-* Excellent Entity Framework Core integration
+* Approved project-wide implementation target
+* ASP.NET Core and Entity Framework Core 9 integration
 
 **Status**
 
@@ -139,13 +137,13 @@ FluentValidation
 
 **Decision**
 
-AutoMapper
+Manual Mapping
 
 **Reason**
 
-* Simplifies DTO mapping
-* Reduces repetitive code
-* Easy maintenance
+* Avoids production licensing requirements
+* Keeps MVP mappings explicit
+* Avoids an additional runtime dependency
 
 **Status**
 
