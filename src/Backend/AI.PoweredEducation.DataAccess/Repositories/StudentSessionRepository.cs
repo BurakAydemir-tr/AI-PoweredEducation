@@ -78,6 +78,13 @@ public sealed class StudentSessionRepository : IStudentSessionRepository
         await _dbContext.StudentSessions.AddAsync(studentSession, cancellationToken);
     }
 
+    public async Task AddResultAsync(
+        Result result,
+        CancellationToken cancellationToken = default)
+    {
+        await _dbContext.Results.AddAsync(result, cancellationToken);
+    }
+
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return _dbContext.SaveChangesAsync(cancellationToken);

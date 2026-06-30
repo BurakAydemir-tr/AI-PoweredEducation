@@ -381,11 +381,23 @@ Default Provider:
 
 OpenAI
 
+Initial OpenAI model:
+
+gpt-4.1-mini
+
+Initial Gemini model:
+
+gemini-2.5-flash
+
+The model must remain configurable via application configuration.
+The active provider must remain configurable via application configuration.
+
 **Reason**
 
 * Prevent vendor lock-in
 * Easy provider replacement
 * Better long-term flexibility
+* Allows model replacement without code changes
 
 **Status**
 

@@ -27,5 +27,9 @@ public interface IStudentSessionRepository
         StudentSession studentSession,
         CancellationToken cancellationToken = default);
 
+    Task AddResultAsync(
+        Result result,
+        CancellationToken cancellationToken = default);
+
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

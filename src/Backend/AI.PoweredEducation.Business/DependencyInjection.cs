@@ -1,4 +1,8 @@
 using System.Text;
+using AI.PoweredEducation.Business.ArtificialIntelligence.Configuration;
+using AI.PoweredEducation.Business.ArtificialIntelligence.Interfaces;
+using AI.PoweredEducation.Business.ArtificialIntelligence.Providers;
+using AI.PoweredEducation.Business.ArtificialIntelligence.Services;
 using AI.PoweredEducation.Business.Authentication.Configuration;
 using AI.PoweredEducation.Business.Authentication.Interfaces;
 using AI.PoweredEducation.Business.Authentication.Services;
@@ -60,6 +64,45 @@ public static class DependencyInjection
                 "Refresh token lifetime must be 7 days.")
             .ValidateOnStart();
 
+        services.AddOptions<OpenAiOptions>()
+            .Bind(configuration.GetSection(OpenAiOptions.SectionName));
+        services.AddOptions<GeminiOptions>()
+            .Bind(configuration.GetSection(GeminiOptions.SectionName));
+        services.AddOptions<AiOptions>()
+            .Bind(configuration.GetSection(AiOptions.SectionName));
+
+        services.AddHttpClient<OpenAiProvider>((serviceProvider, httpClient) =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenAiOptions>>()
+                .Value;
+            httpClient.BaseAddress = options.BaseUrl;
+            httpClient.Timeout = TimeSpan.FromSeconds(60);
+        });
+        services.AddHttpClient<GeminiProvider>((serviceProvider, httpClient) =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<GeminiOptions>>()
+                .Value;
+            httpClient.BaseAddress = options.BaseUrl;
+            httpClient.Timeout = TimeSpan.FromSeconds(60);
+        });
+
+        services.AddScoped<IAiProvider>(serviceProvider =>
+        {
+            var options = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<AiOptions>>()
+                .Value;
+
+            return options.Provider.Trim().ToUpperInvariant() switch
+            {
+                "GEMINI" => serviceProvider.GetRequiredService<GeminiProvider>(),
+                "OPENAI" => serviceProvider.GetRequiredService<OpenAiProvider>(),
+                _ => throw new InvalidOperationException(
+                    $"Unsupported AI provider '{options.Provider}'.")
+            };
+        });
+        services.AddScoped<IAiService, AiService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ILearningGameService, LearningGameService>();

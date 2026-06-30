@@ -1,15 +1,16 @@
 using AI.PoweredEducation.Business.ArtificialIntelligence.Dtos;
+using AI.PoweredEducation.Core.Common;
 
 namespace AI.PoweredEducation.Business.ArtificialIntelligence.Interfaces;
 
 public interface IAiService
 {
-    Task<IReadOnlyCollection<GeneratedQuizTask>> GenerateQuizTasksAsync(
+    Task<Result<IReadOnlyCollection<GeneratedQuizTask>>> GenerateQuizTasksAsync(
         AiGenerationContext context,
         int taskCount,
         CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyCollection<GeneratedQrCodeTask>> GenerateQrCodeTasksAsync(
+    Task<Result<IReadOnlyCollection<GeneratedQrCodeTask>>> GenerateQrCodeTasksAsync(
         AiGenerationContext context,
         int taskCount,
         CancellationToken cancellationToken = default);

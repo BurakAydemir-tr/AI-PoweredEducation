@@ -69,4 +69,27 @@ dotnet tool run dotnet-ef database update --project src/Backend/AI.PoweredEducat
 
 ## AI provider durumu
 
-`IAiProvider` ve `IAiService` sözleşmeleri hazırdır. OpenAI ve Gemini implementasyonları, kullanılacak modeller kesinleştirildikten sonra eklenecektir.
+`IAiProvider` ve `IAiService` sözleşmeleri üzerinden OpenAI ve Gemini provider implementasyonları eklenmiştir.
+
+Provider seçimi config üzerinden yapılır. Varsayılan provider OpenAI'dir:
+
+```powershell
+dotnet user-secrets set "AI:Provider" "OpenAI" --project src/Backend/AI.PoweredEducation.API
+dotnet user-secrets set "OpenAI:ApiKey" "<openai_api_key>" --project src/Backend/AI.PoweredEducation.API
+dotnet user-secrets set "OpenAI:Model" "gpt-4.1-mini" --project src/Backend/AI.PoweredEducation.API
+```
+
+Gemini kullanmak için:
+
+```powershell
+dotnet user-secrets set "AI:Provider" "Gemini" --project src/Backend/AI.PoweredEducation.API
+dotnet user-secrets set "Gemini:ApiKey" "<gemini_api_key>" --project src/Backend/AI.PoweredEducation.API
+dotnet user-secrets set "Gemini:Model" "gemini-2.5-flash" --project src/Backend/AI.PoweredEducation.API
+```
+
+AI endpointleri öğretmen JWT token'ı gerektirir:
+
+```text
+POST /api/ai/quiz-tasks
+POST /api/ai/qr-code-tasks
+```

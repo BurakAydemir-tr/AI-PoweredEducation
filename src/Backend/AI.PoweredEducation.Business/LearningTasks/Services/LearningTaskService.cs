@@ -238,5 +238,5 @@ public sealed class LearningTaskService : ILearningTaskService
     private static int NextOrder(LearningGame game) =>
         game.Tasks.Count == 0 ? 1 : game.Tasks.Max(task => task.Order) + 1;
 
-    private static string CreateQrPayload() => $"TASK-{SecureToken.Generate(16)}";
+    private static string CreateQrPayload() => $"TASK-{SecureToken.Generate()}";
 }

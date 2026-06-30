@@ -247,7 +247,11 @@ public sealed class StudentSessionService : IStudentSessionService
         BusinessResult.FromAsync(async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
-        var result = FinishSession(session, SessionEndReason.Left, DateTimeOffset.UtcNow);
+        var result = await FinishSessionAsync(
+            session,
+            SessionEndReason.Left,
+            DateTimeOffset.UtcNow,
+            cancellationToken);
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return StudentSessionMapper.ToResultResponse(result);
     });
@@ -262,7 +266,7 @@ public sealed class StudentSessionService : IStudentSessionService
         var nextAttempt = GetCurrentAttempt(session);
         if (nextAttempt is null)
         {
-            FinishSession(session, SessionEndReason.Completed, now);
+            await FinishSessionAsync(session, SessionEndReason.Completed, now, cancellationToken);
         }
         else
         {
@@ -343,10 +347,11 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.StartedAt.HasValue &&
         now - attempt.StartedAt.Value >= TimeSpan.FromMinutes(timeLimitMinutes);
 
-    private static DomainResult FinishSession(
+    private async Task<DomainResult> FinishSessionAsync(
         StudentSession session,
         SessionEndReason reason,
-        DateTimeOffset finishedAt)
+        DateTimeOffset finishedAt,
+        CancellationToken cancellationToken)
     {
         session.FinishedAt = finishedAt;
         session.EndReason = reason;
@@ -362,6 +367,7 @@ public sealed class StudentSessionService : IStudentSessionService
             PlayedAt = session.StartedAt
         };
         session.Result = result;
+        await _sessionRepository.AddResultAsync(result, cancellationToken);
         return result;
     }
 

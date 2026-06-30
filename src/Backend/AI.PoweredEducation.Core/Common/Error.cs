@@ -26,4 +26,7 @@ public sealed record Error(
 
     public static Error Forbidden(string code, string message) =>
         new(code, message, ErrorType.Forbidden);
+
+    public static Error ExternalService(string code, string message) =>
+        new(code, message, ErrorType.ExternalService);
 }
