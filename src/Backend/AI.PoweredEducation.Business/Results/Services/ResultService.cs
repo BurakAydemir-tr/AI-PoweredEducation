@@ -1,6 +1,8 @@
 using AI.PoweredEducation.Business.Common.Exceptions;
+using AI.PoweredEducation.Business.Common.Results;
 using AI.PoweredEducation.Business.Results.Dtos;
 using AI.PoweredEducation.Business.Results.Interfaces;
+using AI.PoweredEducation.Core.Common;
 using AI.PoweredEducation.DataAccess.Repositories.Interfaces;
 using AI.PoweredEducation.Entity.Entities;
 using AI.PoweredEducation.Entity.Enums;
@@ -20,10 +22,11 @@ public sealed class ResultService : IResultService
         _sessionRepository = sessionRepository;
     }
 
-    public async Task<GameResultsResponse> GetGameResultsAsync(
+    public Task<Result<GameResultsResponse>> GetGameResultsAsync(
         Guid teacherId,
         Guid gameId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var game = await _gameRepository.GetOwnedAsync(gameId, teacherId, cancellationToken)
             ?? throw new ResourceNotFoundException(nameof(LearningGame), gameId);
@@ -56,5 +59,5 @@ public sealed class ResultService : IResultService
             sessions.Count,
             sessions.Count(session => session.EndReason == SessionEndReason.Completed),
             ranked);
-    }
+    });
 }

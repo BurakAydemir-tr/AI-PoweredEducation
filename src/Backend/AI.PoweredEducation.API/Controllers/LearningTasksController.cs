@@ -1,3 +1,4 @@
+using AI.PoweredEducation.API.Results;
 using AI.PoweredEducation.API.Security;
 using AI.PoweredEducation.Business.LearningGames.Dtos;
 using AI.PoweredEducation.Business.LearningTasks.Dtos;
@@ -18,42 +19,49 @@ public sealed class LearningTasksController : ControllerBase
     [HttpPost("api/games/{gameId:guid}/tasks/quiz")]
     public async Task<ActionResult<LearningTaskResponse>> CreateQuiz(
         Guid gameId, CreateQuizTaskRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.CreateQuizAsync(User.GetRequiredUserId(), gameId, request, cancellationToken));
+        (await _service.CreateQuizAsync(User.GetRequiredUserId(), gameId, request, cancellationToken))
+            .ToActionResult(this);
 
     [HttpPost("api/games/{gameId:guid}/tasks/qr")]
     public async Task<ActionResult<LearningTaskResponse>> CreateQr(
         Guid gameId, CreateQrCodeTaskRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.CreateQrCodeAsync(User.GetRequiredUserId(), gameId, request, cancellationToken));
+        (await _service.CreateQrCodeAsync(User.GetRequiredUserId(), gameId, request, cancellationToken))
+            .ToActionResult(this);
 
     [HttpPost("api/games/{gameId:guid}/tasks/gps")]
     public async Task<ActionResult<LearningTaskResponse>> CreateGps(
         Guid gameId, CreateGpsTaskRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.CreateGpsAsync(User.GetRequiredUserId(), gameId, request, cancellationToken));
+        (await _service.CreateGpsAsync(User.GetRequiredUserId(), gameId, request, cancellationToken))
+            .ToActionResult(this);
 
     [HttpPut("api/tasks/{taskId:guid}/quiz")]
     public async Task<ActionResult<LearningTaskResponse>> UpdateQuiz(
         Guid taskId, CreateQuizTaskRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.UpdateQuizAsync(User.GetRequiredUserId(), taskId, request, cancellationToken));
+        (await _service.UpdateQuizAsync(User.GetRequiredUserId(), taskId, request, cancellationToken))
+            .ToActionResult(this);
 
     [HttpPut("api/tasks/{taskId:guid}/qr")]
     public async Task<ActionResult<LearningTaskResponse>> UpdateQr(
         Guid taskId, CreateQrCodeTaskRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.UpdateQrCodeAsync(User.GetRequiredUserId(), taskId, request, cancellationToken));
+        (await _service.UpdateQrCodeAsync(User.GetRequiredUserId(), taskId, request, cancellationToken))
+            .ToActionResult(this);
 
     [HttpPut("api/tasks/{taskId:guid}/gps")]
     public async Task<ActionResult<LearningTaskResponse>> UpdateGps(
         Guid taskId, CreateGpsTaskRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.UpdateGpsAsync(User.GetRequiredUserId(), taskId, request, cancellationToken));
+        (await _service.UpdateGpsAsync(User.GetRequiredUserId(), taskId, request, cancellationToken))
+            .ToActionResult(this);
 
     [HttpDelete("api/tasks/{taskId:guid}")]
     public async Task<IActionResult> Delete(Guid taskId, CancellationToken cancellationToken)
     {
-        await _service.DeleteAsync(User.GetRequiredUserId(), taskId, cancellationToken);
-        return NoContent();
+        return (await _service.DeleteAsync(User.GetRequiredUserId(), taskId, cancellationToken))
+            .ToNoContentActionResult(this);
     }
 
     [HttpPut("api/games/{gameId:guid}/tasks/order")]
     public async Task<ActionResult<IReadOnlyCollection<LearningTaskResponse>>> Reorder(
         Guid gameId, ReorderLearningTasksRequest request, CancellationToken cancellationToken) =>
-        Ok(await _service.ReorderAsync(User.GetRequiredUserId(), gameId, request, cancellationToken));
+        (await _service.ReorderAsync(User.GetRequiredUserId(), gameId, request, cancellationToken))
+            .ToActionResult(this);
 }

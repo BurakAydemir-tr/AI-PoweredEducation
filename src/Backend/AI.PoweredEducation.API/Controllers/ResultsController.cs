@@ -1,3 +1,4 @@
+using AI.PoweredEducation.API.Results;
 using AI.PoweredEducation.API.Security;
 using AI.PoweredEducation.Business.Results.Dtos;
 using AI.PoweredEducation.Business.Results.Interfaces;
@@ -19,8 +20,9 @@ public sealed class ResultsController : ControllerBase
     public async Task<ActionResult<GameResultsResponse>> Get(
         Guid gameId,
         CancellationToken cancellationToken) =>
-        Ok(await _service.GetGameResultsAsync(
+        (await _service.GetGameResultsAsync(
             User.GetRequiredUserId(),
             gameId,
-            cancellationToken));
+            cancellationToken))
+            .ToActionResult(this);
 }

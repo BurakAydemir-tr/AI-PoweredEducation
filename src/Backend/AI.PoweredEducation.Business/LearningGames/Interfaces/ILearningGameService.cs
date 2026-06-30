@@ -1,55 +1,56 @@
 using AI.PoweredEducation.Business.LearningGames.Dtos;
+using AI.PoweredEducation.Core.Common;
 
 namespace AI.PoweredEducation.Business.LearningGames.Interfaces;
 
 public interface ILearningGameService
 {
-    Task<IReadOnlyCollection<LearningGameResponse>> GetAllAsync(
+    Task<Result<IReadOnlyCollection<LearningGameResponse>>> GetAllAsync(
         Guid teacherId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> CreateAsync(
+    Task<Result<LearningGameResponse>> CreateAsync(
         Guid teacherId,
         CreateLearningGameRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> GetAsync(
+    Task<Result<LearningGameResponse>> GetAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> UpdateAsync(
+    Task<Result<LearningGameResponse>> UpdateAsync(
         Guid teacherId,
         Guid gameId,
         UpdateLearningGameRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> PublishAsync(
+    Task<Result<LearningGameResponse>> PublishAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> ActivateAsync(
+    Task<Result<LearningGameResponse>> ActivateAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> DeactivateAsync(
+    Task<Result<LearningGameResponse>> DeactivateAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> ArchiveAsync(
+    Task<Result<LearningGameResponse>> ArchiveAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> RestoreArchivedAsync(
+    Task<Result<LearningGameResponse>> RestoreArchivedAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);
 
-    Task<LearningGameResponse> CloneAsync(
+    Task<Result<LearningGameResponse>> CloneAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default);

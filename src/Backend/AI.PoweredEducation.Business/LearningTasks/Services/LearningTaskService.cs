@@ -1,13 +1,16 @@
 using AI.PoweredEducation.Business.Common.Exceptions;
+using AI.PoweredEducation.Business.Common.Results;
 using AI.PoweredEducation.Business.LearningGames.Dtos;
 using AI.PoweredEducation.Business.LearningGames.Mappings;
 using AI.PoweredEducation.Business.LearningTasks.Dtos;
 using AI.PoweredEducation.Business.LearningTasks.Interfaces;
+using AI.PoweredEducation.Core.Common;
 using AI.PoweredEducation.Core.Security;
 using AI.PoweredEducation.DataAccess.Repositories.Interfaces;
 using AI.PoweredEducation.Entity.Entities;
 using AI.PoweredEducation.Entity.Enums;
 using FluentValidation;
+using CoreResult = AI.PoweredEducation.Core.Common.Result;
 
 namespace AI.PoweredEducation.Business.LearningTasks.Services;
 
@@ -36,9 +39,10 @@ public sealed class LearningTaskService : ILearningTaskService
         _reorderValidator = reorderValidator;
     }
 
-    public async Task<LearningTaskResponse> CreateQuizAsync(
+    public Task<Result<LearningTaskResponse>> CreateQuizAsync(
         Guid teacherId, Guid gameId, CreateQuizTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _quizValidator.ValidateAndThrowAsync(request, cancellationToken);
         var game = await GetEditableGameAsync(gameId, teacherId, cancellationToken);
@@ -55,11 +59,12 @@ public sealed class LearningTaskService : ILearningTaskService
             CorrectAnswer = request.CorrectAnswer
         };
         return await AddAsync(task, cancellationToken);
-    }
+    });
 
-    public async Task<LearningTaskResponse> CreateQrCodeAsync(
+    public Task<Result<LearningTaskResponse>> CreateQrCodeAsync(
         Guid teacherId, Guid gameId, CreateQrCodeTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _qrValidator.ValidateAndThrowAsync(request, cancellationToken);
         var game = await GetEditableGameAsync(gameId, teacherId, cancellationToken);
@@ -73,11 +78,12 @@ public sealed class LearningTaskService : ILearningTaskService
             TimeLimitMinutes = request.TimeLimitMinutes
         };
         return await AddAsync(task, cancellationToken);
-    }
+    });
 
-    public async Task<LearningTaskResponse> CreateGpsAsync(
+    public Task<Result<LearningTaskResponse>> CreateGpsAsync(
         Guid teacherId, Guid gameId, CreateGpsTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _gpsValidator.ValidateAndThrowAsync(request, cancellationToken);
         var game = await GetEditableGameAsync(gameId, teacherId, cancellationToken);
@@ -93,11 +99,12 @@ public sealed class LearningTaskService : ILearningTaskService
             TimeLimitMinutes = request.TimeLimitMinutes
         };
         return await AddAsync(task, cancellationToken);
-    }
+    });
 
-    public async Task<LearningTaskResponse> UpdateQuizAsync(
+    public Task<Result<LearningTaskResponse>> UpdateQuizAsync(
         Guid teacherId, Guid taskId, CreateQuizTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _quizValidator.ValidateAndThrowAsync(request, cancellationToken);
         var task = await GetEditableTaskAsync<QuizTask>(taskId, teacherId, cancellationToken);
@@ -108,22 +115,24 @@ public sealed class LearningTaskService : ILearningTaskService
         task.OptionD = request.OptionD.Trim();
         task.CorrectAnswer = request.CorrectAnswer;
         return await SaveAsync(task, cancellationToken);
-    }
+    });
 
-    public async Task<LearningTaskResponse> UpdateQrCodeAsync(
+    public Task<Result<LearningTaskResponse>> UpdateQrCodeAsync(
         Guid teacherId, Guid taskId, CreateQrCodeTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _qrValidator.ValidateAndThrowAsync(request, cancellationToken);
         var task = await GetEditableTaskAsync<QrCodeTask>(taskId, teacherId, cancellationToken);
         task.Instructions = request.Instructions.Trim();
         task.TimeLimitMinutes = request.TimeLimitMinutes;
         return await SaveAsync(task, cancellationToken);
-    }
+    });
 
-    public async Task<LearningTaskResponse> UpdateGpsAsync(
+    public Task<Result<LearningTaskResponse>> UpdateGpsAsync(
         Guid teacherId, Guid taskId, CreateGpsTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _gpsValidator.ValidateAndThrowAsync(request, cancellationToken);
         var task = await GetEditableTaskAsync<GpsTask>(taskId, teacherId, cancellationToken);
@@ -133,11 +142,12 @@ public sealed class LearningTaskService : ILearningTaskService
         task.GameAreaJson = request.GameAreaJson;
         task.TimeLimitMinutes = request.TimeLimitMinutes;
         return await SaveAsync(task, cancellationToken);
-    }
+    });
 
-    public async Task DeleteAsync(
+    public Task<CoreResult> DeleteAsync(
         Guid teacherId, Guid taskId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var task = await GetEditableTaskAsync<LearningTask>(taskId, teacherId, cancellationToken);
         var game = await GetEditableGameAsync(task.LearningGameId, teacherId, cancellationToken);
@@ -147,11 +157,12 @@ public sealed class LearningTaskService : ILearningTaskService
             subsequent.Order--;
         }
         await _taskRepository.SaveChangesAsync(cancellationToken);
-    }
+    });
 
-    public async Task<IReadOnlyCollection<LearningTaskResponse>> ReorderAsync(
+    public Task<Result<IReadOnlyCollection<LearningTaskResponse>>> ReorderAsync(
         Guid teacherId, Guid gameId, ReorderLearningTasksRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _reorderValidator.ValidateAndThrowAsync(request, cancellationToken);
         var game = await GetEditableGameAsync(gameId, teacherId, cancellationToken);
@@ -167,11 +178,11 @@ public sealed class LearningTaskService : ILearningTaskService
         }
 
         await _gameRepository.SaveChangesAsync(cancellationToken);
-        return game.Tasks
+        return (IReadOnlyCollection<LearningTaskResponse>)game.Tasks
             .OrderBy(task => task.Order)
             .Select(LearningGameMapper.ToTaskResponse)
             .ToArray();
-    }
+    });
 
     private async Task<LearningTaskResponse> AddAsync(
         LearningTask task, CancellationToken cancellationToken)

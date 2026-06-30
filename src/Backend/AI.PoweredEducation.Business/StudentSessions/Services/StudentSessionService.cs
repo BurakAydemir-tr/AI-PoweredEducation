@@ -1,13 +1,16 @@
 using AI.PoweredEducation.Business.Common.Exceptions;
+using AI.PoweredEducation.Business.Common.Results;
 using AI.PoweredEducation.Business.StudentSessions.Dtos;
 using AI.PoweredEducation.Business.StudentSessions.Interfaces;
 using AI.PoweredEducation.Business.StudentSessions.Mappings;
+using AI.PoweredEducation.Core.Common;
 using AI.PoweredEducation.Core.Security;
 using AI.PoweredEducation.DataAccess.Repositories.Interfaces;
 using AI.PoweredEducation.Entity.Entities;
 using AI.PoweredEducation.Entity.Enums;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using DomainResult = AI.PoweredEducation.Entity.Entities.Result;
 
 namespace AI.PoweredEducation.Business.StudentSessions.Services;
 
@@ -38,9 +41,10 @@ public sealed class StudentSessionService : IStudentSessionService
         _gpsValidator = gpsValidator;
     }
 
-    public async Task<JoinGameResponse> JoinAsync(
+    public Task<Result<JoinGameResponse>> JoinAsync(
         JoinGameRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _joinValidator.ValidateAndThrowAsync(request, cancellationToken);
         var gameCode = request.GameCode.Trim().ToUpperInvariant();
@@ -98,19 +102,21 @@ public sealed class StudentSessionService : IStudentSessionService
             session.StudentName,
             rawSessionToken,
             StudentSessionMapper.ToTaskResponse(firstAttempt.LearningTask));
-    }
+    });
 
-    public async Task<StudentProgressResponse> GetProgressAsync(
+    public Task<Result<StudentProgressResponse>> GetProgressAsync(
         string sessionToken,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var session = await GetSessionAsync(sessionToken, cancellationToken);
         return BuildProgress(session);
-    }
+    });
 
-    public async Task<StudentProgressResponse> StartCurrentTaskAsync(
+    public Task<Result<StudentProgressResponse>> StartCurrentTaskAsync(
         string sessionToken,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var attempt = GetCurrentAttempt(session)
@@ -118,12 +124,13 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.StartedAt ??= DateTimeOffset.UtcNow;
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return BuildProgress(session);
-    }
+    });
 
-    public async Task<StudentProgressResponse> SubmitQuizAnswerAsync(
+    public Task<Result<StudentProgressResponse>> SubmitQuizAnswerAsync(
         string sessionToken,
         SubmitQuizAnswerRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _quizValidator.ValidateAndThrowAsync(request, cancellationToken);
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
@@ -153,12 +160,13 @@ public sealed class StudentSessionService : IStudentSessionService
 
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return BuildProgress(session, "Incorrect answer. Try again.");
-    }
+    });
 
-    public async Task<StudentProgressResponse> ScanQrCodeAsync(
+    public Task<Result<StudentProgressResponse>> ScanQrCodeAsync(
         string sessionToken,
         ScanQrCodeRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _qrValidator.ValidateAndThrowAsync(request, cancellationToken);
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
@@ -183,12 +191,13 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.ScoreEarned = 100;
         CompleteAttempt(attempt, now);
         return await AdvanceAndSaveAsync(session, cancellationToken, "QR task completed.");
-    }
+    });
 
-    public async Task<StudentProgressResponse> CompleteGpsTaskAsync(
+    public Task<Result<StudentProgressResponse>> CompleteGpsTaskAsync(
         string sessionToken,
         CompleteGpsTaskRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _gpsValidator.ValidateAndThrowAsync(request, cancellationToken);
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
@@ -216,11 +225,12 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.ScoreEarned = 100;
         CompleteAttempt(attempt, now);
         return await AdvanceAndSaveAsync(session, cancellationToken, "Target reached.");
-    }
+    });
 
-    public async Task<StudentProgressResponse> TimeoutCurrentTaskAsync(
+    public Task<Result<StudentProgressResponse>> TimeoutCurrentTaskAsync(
         string sessionToken,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var attempt = GetCurrentAttempt(session)
@@ -229,17 +239,18 @@ public sealed class StudentSessionService : IStudentSessionService
             throw new BusinessRuleException("Quiz tasks cannot be timed out.");
         TimeoutAttempt(attempt, DateTimeOffset.UtcNow);
         return await AdvanceAndSaveAsync(session, cancellationToken, "Task timed out.");
-    }
+    });
 
-    public async Task<ResultResponse> LeaveAsync(
+    public Task<Result<ResultResponse>> LeaveAsync(
         string sessionToken,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var result = FinishSession(session, SessionEndReason.Left, DateTimeOffset.UtcNow);
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return StudentSessionMapper.ToResultResponse(result);
-    }
+    });
 
     private async Task<StudentProgressResponse> AdvanceAndSaveAsync(
         StudentSession session,
@@ -332,14 +343,14 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.StartedAt.HasValue &&
         now - attempt.StartedAt.Value >= TimeSpan.FromMinutes(timeLimitMinutes);
 
-    private static Result FinishSession(
+    private static DomainResult FinishSession(
         StudentSession session,
         SessionEndReason reason,
         DateTimeOffset finishedAt)
     {
         session.FinishedAt = finishedAt;
         session.EndReason = reason;
-        var result = new Result
+        var result = new DomainResult
         {
             Id = Guid.NewGuid(),
             StudentSessionId = session.Id,

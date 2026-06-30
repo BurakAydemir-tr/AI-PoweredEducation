@@ -1,18 +1,19 @@
 using AI.PoweredEducation.Business.Authentication.Dtos;
+using AI.PoweredEducation.Core.Common;
 
 namespace AI.PoweredEducation.Business.Authentication.Interfaces;
 
 public interface IAuthenticationService
 {
-    Task<AuthenticationResponse> RegisterAsync(
+    Task<Result<AuthenticationResponse>> RegisterAsync(
         RegisterRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<AuthenticationResponse> LoginAsync(
+    Task<Result<AuthenticationResponse>> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default);
 
-    Task<AuthenticationResponse> RefreshAsync(
+    Task<Result<AuthenticationResponse>> RefreshAsync(
         RefreshTokenRequest request,
         CancellationToken cancellationToken = default);
 }

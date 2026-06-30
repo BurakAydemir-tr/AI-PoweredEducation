@@ -151,6 +151,29 @@ Manual Mapping
 
 ---
 
+## Error Handling Strategy
+
+**Decision**
+
+Business operations return a shared `Result` / `Result<T>` model from the Core Layer.
+
+Expected validation, not found, conflict, unauthorized, and forbidden outcomes should be represented as Result failures.
+
+Unexpected infrastructure, configuration, or programming errors may still use exceptions and are handled by the API global exception handler.
+
+**Reason**
+
+* Keeps predictable business outcomes explicit
+* Avoids using exceptions as API control flow
+* Provides a consistent error contract between Business and API layers
+* Keeps system-level failures visible as exceptional cases
+
+**Status**
+
+✅ Frozen
+
+---
+
 # Database
 
 ## Database Engine

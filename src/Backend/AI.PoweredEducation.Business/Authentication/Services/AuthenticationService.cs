@@ -1,6 +1,8 @@
 using AI.PoweredEducation.Business.Authentication.Dtos;
 using AI.PoweredEducation.Business.Authentication.Exceptions;
 using AI.PoweredEducation.Business.Authentication.Interfaces;
+using AI.PoweredEducation.Business.Common.Results;
+using AI.PoweredEducation.Core.Common;
 using AI.PoweredEducation.Core.Security;
 using AI.PoweredEducation.DataAccess.Persistence;
 using AI.PoweredEducation.Entity.Identity;
@@ -35,9 +37,10 @@ public sealed class AuthenticationService : IAuthenticationService
         _refreshTokenRequestValidator = refreshTokenRequestValidator;
     }
 
-    public async Task<AuthenticationResponse> RegisterAsync(
+    public Task<Result<AuthenticationResponse>> RegisterAsync(
         RegisterRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _registerRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
         var email = request.Email.Trim();
@@ -65,11 +68,12 @@ public sealed class AuthenticationService : IAuthenticationService
         await transaction.CommitAsync(cancellationToken);
 
         return response;
-    }
+    });
 
-    public async Task<AuthenticationResponse> LoginAsync(
+    public Task<Result<AuthenticationResponse>> LoginAsync(
         LoginRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _loginRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
         var user = await _userManager.FindByEmailAsync(request.Email.Trim());
@@ -81,11 +85,12 @@ public sealed class AuthenticationService : IAuthenticationService
         }
 
         return await CreateAndPersistTokensAsync(user, cancellationToken);
-    }
+    });
 
-    public async Task<AuthenticationResponse> RefreshAsync(
+    public Task<Result<AuthenticationResponse>> RefreshAsync(
         RefreshTokenRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _refreshTokenRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
         var now = DateTimeOffset.UtcNow;
@@ -126,7 +131,7 @@ public sealed class AuthenticationService : IAuthenticationService
         }
 
         return CreateResponse(accessToken, replacement);
-    }
+    });
 
     private async Task<AuthenticationResponse> CreateAndPersistTokensAsync(
         ApplicationUser user,

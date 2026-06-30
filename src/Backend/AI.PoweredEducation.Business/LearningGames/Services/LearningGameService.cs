@@ -1,7 +1,9 @@
 using AI.PoweredEducation.Business.Common.Exceptions;
+using AI.PoweredEducation.Business.Common.Results;
 using AI.PoweredEducation.Business.LearningGames.Dtos;
 using AI.PoweredEducation.Business.LearningGames.Interfaces;
 using AI.PoweredEducation.Business.LearningGames.Mappings;
+using AI.PoweredEducation.Core.Common;
 using AI.PoweredEducation.Core.Security;
 using AI.PoweredEducation.DataAccess.Repositories.Interfaces;
 using AI.PoweredEducation.Entity.Entities;
@@ -28,18 +30,20 @@ public sealed class LearningGameService : ILearningGameService
         _updateValidator = updateValidator;
     }
 
-    public async Task<IReadOnlyCollection<LearningGameResponse>> GetAllAsync(
+    public Task<Result<IReadOnlyCollection<LearningGameResponse>>> GetAllAsync(
         Guid teacherId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var games = await _repository.GetAllOwnedAsync(teacherId, cancellationToken);
-        return games.Select(LearningGameMapper.ToResponse).ToArray();
-    }
+        return (IReadOnlyCollection<LearningGameResponse>)games.Select(LearningGameMapper.ToResponse).ToArray();
+    });
 
-    public async Task<LearningGameResponse> CreateAsync(
+    public Task<Result<LearningGameResponse>> CreateAsync(
         Guid teacherId,
         CreateLearningGameRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _createValidator.ValidateAndThrowAsync(request, cancellationToken);
 
@@ -53,22 +57,24 @@ public sealed class LearningGameService : ILearningGameService
         await _repository.SaveChangesAsync(cancellationToken);
 
         return LearningGameMapper.ToResponse(game);
-    }
+    });
 
-    public async Task<LearningGameResponse> GetAsync(
+    public Task<Result<LearningGameResponse>> GetAsync(
         Guid teacherId,
         Guid gameId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var game = await GetOwnedWithTasksAsync(gameId, teacherId, cancellationToken);
         return LearningGameMapper.ToResponse(game);
-    }
+    });
 
-    public async Task<LearningGameResponse> UpdateAsync(
+    public Task<Result<LearningGameResponse>> UpdateAsync(
         Guid teacherId,
         Guid gameId,
         UpdateLearningGameRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         await _updateValidator.ValidateAndThrowAsync(request, cancellationToken);
 
@@ -79,12 +85,13 @@ public sealed class LearningGameService : ILearningGameService
         await _repository.SaveChangesAsync(cancellationToken);
 
         return LearningGameMapper.ToResponse(game);
-    }
+    });
 
-    public async Task<LearningGameResponse> PublishAsync(
+    public Task<Result<LearningGameResponse>> PublishAsync(
         Guid teacherId,
         Guid gameId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var game = await GetOwnedWithTasksAsync(gameId, teacherId, cancellationToken);
 
@@ -102,38 +109,39 @@ public sealed class LearningGameService : ILearningGameService
         await _repository.SaveChangesAsync(cancellationToken);
 
         return LearningGameMapper.ToResponse(game);
-    }
+    });
 
-    public Task<LearningGameResponse> ActivateAsync(
+    public Task<Result<LearningGameResponse>> ActivateAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default)
     {
-        return ChangeStatusAsync(
+        return BusinessResult.FromAsync(() => ChangeStatusAsync(
             teacherId,
             gameId,
             LearningGameStatus.Inactive,
             LearningGameStatus.Active,
-            cancellationToken);
+            cancellationToken));
     }
 
-    public Task<LearningGameResponse> DeactivateAsync(
+    public Task<Result<LearningGameResponse>> DeactivateAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default)
     {
-        return ChangeStatusAsync(
+        return BusinessResult.FromAsync(() => ChangeStatusAsync(
             teacherId,
             gameId,
             LearningGameStatus.Active,
             LearningGameStatus.Inactive,
-            cancellationToken);
+            cancellationToken));
     }
 
-    public async Task<LearningGameResponse> ArchiveAsync(
+    public Task<Result<LearningGameResponse>> ArchiveAsync(
         Guid teacherId,
         Guid gameId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var game = await GetOwnedWithTasksAsync(gameId, teacherId, cancellationToken);
 
@@ -146,25 +154,26 @@ public sealed class LearningGameService : ILearningGameService
         await _repository.SaveChangesAsync(cancellationToken);
 
         return LearningGameMapper.ToResponse(game);
-    }
+    });
 
-    public Task<LearningGameResponse> RestoreArchivedAsync(
+    public Task<Result<LearningGameResponse>> RestoreArchivedAsync(
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default)
     {
-        return ChangeStatusAsync(
+        return BusinessResult.FromAsync(() => ChangeStatusAsync(
             teacherId,
             gameId,
             LearningGameStatus.Archived,
             LearningGameStatus.Inactive,
-            cancellationToken);
+            cancellationToken));
     }
 
-    public async Task<LearningGameResponse> CloneAsync(
+    public Task<Result<LearningGameResponse>> CloneAsync(
         Guid teacherId,
         Guid gameId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        BusinessResult.FromAsync(async () =>
     {
         var source = await GetOwnedWithTasksAsync(gameId, teacherId, cancellationToken);
         var clone = new LearningGame
@@ -189,7 +198,7 @@ public sealed class LearningGameService : ILearningGameService
         await _repository.SaveChangesAsync(cancellationToken);
 
         return LearningGameMapper.ToResponse(clone);
-    }
+    });
 
     private async Task<LearningGameResponse> ChangeStatusAsync(
         Guid teacherId,

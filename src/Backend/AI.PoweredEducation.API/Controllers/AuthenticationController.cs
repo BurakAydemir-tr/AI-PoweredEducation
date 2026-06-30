@@ -1,3 +1,4 @@
+using AI.PoweredEducation.API.Results;
 using AI.PoweredEducation.Business.Authentication.Dtos;
 using AI.PoweredEducation.Business.Authentication.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -24,7 +25,8 @@ public sealed class AuthenticationController : ControllerBase
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        return Ok(await _authenticationService.RegisterAsync(request, cancellationToken));
+        return (await _authenticationService.RegisterAsync(request, cancellationToken))
+            .ToActionResult(this);
     }
 
     [HttpPost("login")]
@@ -35,7 +37,8 @@ public sealed class AuthenticationController : ControllerBase
         LoginRequest request,
         CancellationToken cancellationToken)
     {
-        return Ok(await _authenticationService.LoginAsync(request, cancellationToken));
+        return (await _authenticationService.LoginAsync(request, cancellationToken))
+            .ToActionResult(this);
     }
 
     [HttpPost("refresh")]
@@ -46,6 +49,7 @@ public sealed class AuthenticationController : ControllerBase
         RefreshTokenRequest request,
         CancellationToken cancellationToken)
     {
-        return Ok(await _authenticationService.RefreshAsync(request, cancellationToken));
+        return (await _authenticationService.RefreshAsync(request, cancellationToken))
+            .ToActionResult(this);
     }
 }
