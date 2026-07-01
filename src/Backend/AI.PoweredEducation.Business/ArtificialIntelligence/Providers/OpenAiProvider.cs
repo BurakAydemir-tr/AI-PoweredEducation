@@ -63,8 +63,10 @@ public sealed class OpenAiProvider : IAiProvider
 
             Generate QR code tasks only.
             Each QR code task must contain:
-            - student-facing instructions for a physical classroom or school activity
+            - exactly one short Turkish keyword related to the topic in the qrPayload property
+            - brief student-facing instructions telling the student to scan the QR code for that keyword
             - a time limit in minutes
+            The qrPayload value must be a single word when possible.
             Do not generate QR images. Do not generate GPS coordinates or physical target locations.
             """;
 
@@ -228,6 +230,7 @@ public sealed class OpenAiProvider : IAiProvider
                     properties = new
                     {
                         instructions = new { type = "string" },
+                        qrPayload = new { type = "string" },
                         timeLimitMinutes = new
                         {
                             type = "integer",
@@ -235,7 +238,7 @@ public sealed class OpenAiProvider : IAiProvider
                             maximum = 60
                         }
                     },
-                    required = new[] { "instructions", "timeLimitMinutes" }
+                    required = new[] { "instructions", "qrPayload", "timeLimitMinutes" }
                 }
             }
         },

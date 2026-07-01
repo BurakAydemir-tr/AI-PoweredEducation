@@ -35,6 +35,16 @@ public sealed class JwtTokenService : IJwtTokenService
             claims.Add(new Claim(ClaimTypes.Email, user.Email));
         }
 
+        if (!string.IsNullOrWhiteSpace(user.FirstName))
+        {
+            claims.Add(new Claim(ClaimTypes.GivenName, user.FirstName));
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.LastName))
+        {
+            claims.Add(new Claim(ClaimTypes.Surname, user.LastName));
+        }
+
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(

@@ -52,7 +52,9 @@ public sealed class AuthenticationService : IAuthenticationService
         {
             Id = Guid.NewGuid(),
             Email = email,
-            UserName = email
+            UserName = email,
+            FirstName = request.FirstName.Trim(),
+            LastName = request.LastName.Trim()
         };
 
         var creationResult = await _userManager.CreateAsync(user, request.Password);
@@ -130,7 +132,7 @@ public sealed class AuthenticationService : IAuthenticationService
                 innerException: exception);
         }
 
-        return CreateResponse(accessToken, replacement);
+        return CreateResponse(currentToken.User, accessToken, replacement);
     });
 
     private async Task<AuthenticationResponse> CreateAndPersistTokensAsync(
@@ -144,10 +146,11 @@ public sealed class AuthenticationService : IAuthenticationService
         _dbContext.RefreshTokens.Add(refreshToken.Entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreateResponse(accessToken, refreshToken);
+        return CreateResponse(user, accessToken, refreshToken);
     }
 
     private static AuthenticationResponse CreateResponse(
+        ApplicationUser user,
         AccessToken accessToken,
         GeneratedRefreshToken refreshToken)
     {
@@ -155,7 +158,9 @@ public sealed class AuthenticationService : IAuthenticationService
             accessToken.Value,
             accessToken.ExpiresAt,
             refreshToken.Value,
-            refreshToken.Entity.ExpiresAt);
+            refreshToken.Entity.ExpiresAt,
+            user.FirstName,
+            user.LastName);
     }
 
     private static AuthenticationServiceException InvalidRefreshToken()

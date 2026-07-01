@@ -115,14 +115,25 @@ public sealed class LearningGameService : ILearningGameService
         Guid teacherId,
         Guid gameId,
         CancellationToken cancellationToken = default)
+        => BusinessResult.FromAsync(async () =>
     {
-        return BusinessResult.FromAsync(() => ChangeStatusAsync(
-            teacherId,
-            gameId,
-            LearningGameStatus.Inactive,
-            LearningGameStatus.Active,
-            cancellationToken));
-    }
+        var game = await GetOwnedWithTasksAsync(gameId, teacherId, cancellationToken);
+
+        if (game.Status is not (LearningGameStatus.Draft or LearningGameStatus.Inactive))
+        {
+            throw new BusinessRuleException("Only draft or inactive games can be activated.");
+        }
+
+        if (game.Tasks.Count == 0)
+        {
+            throw new BusinessRuleException("A game must contain at least one task before activation.");
+        }
+
+        game.Status = LearningGameStatus.Active;
+        await _repository.SaveChangesAsync(cancellationToken);
+
+        return LearningGameMapper.ToResponse(game);
+    });
 
     public Task<Result<LearningGameResponse>> DeactivateAsync(
         Guid teacherId,

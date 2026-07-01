@@ -24,6 +24,11 @@ coverage/
 *.coverage
 *.coveragexml
 
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
 # NuGet
 *.nupkg
 *.snupkg

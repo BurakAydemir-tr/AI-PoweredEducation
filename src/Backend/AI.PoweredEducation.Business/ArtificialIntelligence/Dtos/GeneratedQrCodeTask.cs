@@ -2,4 +2,5 @@ namespace AI.PoweredEducation.Business.ArtificialIntelligence.Dtos;
 
 public sealed record GeneratedQrCodeTask(
     string Instructions,
-    int TimeLimitMinutes);
+    int TimeLimitMinutes,
+    string QrPayload);

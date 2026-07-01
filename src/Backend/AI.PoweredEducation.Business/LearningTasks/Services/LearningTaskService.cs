@@ -74,7 +74,7 @@ public sealed class LearningTaskService : ILearningTaskService
             LearningGameId = game.Id,
             Order = NextOrder(game),
             Instructions = request.Instructions.Trim(),
-            QrPayload = CreateQrPayload(),
+            QrPayload = NormalizeQrPayload(request.QrPayload) ?? CreateQrPayload(),
             TimeLimitMinutes = request.TimeLimitMinutes
         };
         return await AddAsync(task, cancellationToken);
@@ -125,6 +125,7 @@ public sealed class LearningTaskService : ILearningTaskService
         await _qrValidator.ValidateAndThrowAsync(request, cancellationToken);
         var task = await GetEditableTaskAsync<QrCodeTask>(taskId, teacherId, cancellationToken);
         task.Instructions = request.Instructions.Trim();
+        task.QrPayload = NormalizeQrPayload(request.QrPayload) ?? task.QrPayload;
         task.TimeLimitMinutes = request.TimeLimitMinutes;
         return await SaveAsync(task, cancellationToken);
     });
@@ -239,4 +240,11 @@ public sealed class LearningTaskService : ILearningTaskService
         game.Tasks.Count == 0 ? 1 : game.Tasks.Max(task => task.Order) + 1;
 
     private static string CreateQrPayload() => $"TASK-{SecureToken.Generate()}";
+
+    private static string? NormalizeQrPayload(string? qrPayload)
+    {
+        return string.IsNullOrWhiteSpace(qrPayload)
+            ? null
+            : qrPayload.Trim();
+    }
 }

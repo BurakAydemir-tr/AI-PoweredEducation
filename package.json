@@ -1,0 +1,10 @@
+{
+  "name": "ai-powerededucation",
+  "private": true,
+  "scripts": {
+    "frontend:dev": "npm --prefix src/Frontend/AI.PoweredEducation.Teacher run dev",
+    "frontend:build": "npm --prefix src/Frontend/AI.PoweredEducation.Teacher run build",
+    "frontend:lint": "npm --prefix src/Frontend/AI.PoweredEducation.Teacher run lint",
+    "frontend:install": "npm --prefix src/Frontend/AI.PoweredEducation.Teacher install"
+  }
+}
