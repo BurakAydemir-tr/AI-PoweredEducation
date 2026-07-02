@@ -7,6 +7,7 @@ import {
   Card,
   CardActions,
   CardContent,
+  CircularProgress,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -50,6 +51,7 @@ import {
   activateGame,
   deactivateGame,
   getGame,
+  restoreGame,
   updateGame,
 } from '../../services/games/gamesApi'
 import {
@@ -267,6 +269,9 @@ export function GameEditorPage() {
   const [generatedQrTasks, setGeneratedQrTasks] = useState<GeneratedQrCodeTask[]>(
     [],
   )
+  const [generatingAiTaskType, setGeneratingAiTaskType] = useState<
+    'quiz' | 'qr' | null
+  >(null)
 
   const orderedGörevler = useMemo(
     () => [...(game?.tasks ?? [])].sort((a, b) => a.order - b.order),
@@ -476,7 +481,7 @@ export function GameEditorPage() {
       return
     }
 
-    setIsSubmitting(true)
+    setGeneratingAiTaskType('quiz')
     setErrorMessage(null)
 
     try {
@@ -485,7 +490,7 @@ export function GameEditorPage() {
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error))
     } finally {
-      setIsSubmitting(false)
+      setGeneratingAiTaskType(null)
     }
   }
 
@@ -496,7 +501,7 @@ export function GameEditorPage() {
       return
     }
 
-    setIsSubmitting(true)
+    setGeneratingAiTaskType('qr')
     setErrorMessage(null)
 
     try {
@@ -505,7 +510,7 @@ export function GameEditorPage() {
     } catch (error) {
       setErrorMessage(getApiErrorMessage(error))
     } finally {
-      setIsSubmitting(false)
+      setGeneratingAiTaskType(null)
     }
   }
 
@@ -596,6 +601,15 @@ export function GameEditorPage() {
               variant="outlined"
             >
               Pasifleştir
+            </Button>
+          ) : game.status === 3 ? (
+            <Button
+              onClick={() =>
+                void runLifecycleAction(restoreGame, 'Oyun geri yüklendi.')
+              }
+              variant="contained"
+            >
+              Geri yükle
             </Button>
           ) : (
             <Button
@@ -714,18 +728,32 @@ export function GameEditorPage() {
             />
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <Button
-                disabled={isSubmitting}
+                disabled={generatingAiTaskType !== null}
+                startIcon={
+                  generatingAiTaskType === 'quiz' ? (
+                    <CircularProgress color="inherit" size={16} />
+                  ) : undefined
+                }
                 onClick={() => void handleGenerateQuizTasks()}
                 variant="contained"
               >
-                Quiz görevleri üret
+                {generatingAiTaskType === 'quiz'
+                  ? 'Quiz görevleri üretiliyor...'
+                  : 'Quiz görevleri üret'}
               </Button>
               <Button
-                disabled={isSubmitting}
+                disabled={generatingAiTaskType !== null}
+                startIcon={
+                  generatingAiTaskType === 'qr' ? (
+                    <CircularProgress color="inherit" size={16} />
+                  ) : undefined
+                }
                 onClick={() => void handleGenerateQrTasks()}
                 variant="contained"
               >
-                QR görevleri üret
+                {generatingAiTaskType === 'qr'
+                  ? 'QR görevleri üretiliyor...'
+                  : 'QR görevleri üret'}
               </Button>
             </Stack>
             {generatedQuizTasks.map((task, index) => (

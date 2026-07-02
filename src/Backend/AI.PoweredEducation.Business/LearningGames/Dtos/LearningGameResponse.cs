@@ -11,4 +11,5 @@ public sealed record LearningGameResponse(
     int ExpectedStudentCount,
     LearningGameStatus Status,
     string GameCode,
+    DateTimeOffset CreatedAt,
     IReadOnlyCollection<LearningTaskResponse> Tasks);

@@ -30,6 +30,11 @@ import {
 import { gameEnvironmentTypeLabels } from '../../utils/enumLabels'
 import { getApiErrorMessage } from '../../utils/apiError'
 
+const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
 export function GamesPage() {
   const navigate = useNavigate()
   const [games, setGames] = useState<LearningGame[]>([])
@@ -158,6 +163,9 @@ export function GamesPage() {
                     <Typography color="text.secondary" variant="body2">
                       {game.tasks.length} görev
                     </Typography>
+                    <Typography color="text.secondary" variant="body2">
+                      Oluşturulma: {dateFormatter.format(new Date(game.createdAt))}
+                    </Typography>
                   </Stack>
                 </CardContent>
                 <CardActions sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -190,7 +198,7 @@ export function GamesPage() {
                       Pasifleştir
                     </Button>
                   )}
-                  {game.status !== 0 && game.status !== 3 && (
+                  {game.status === 1 && (
                     <Button
                       color="warning"
                       size="small"

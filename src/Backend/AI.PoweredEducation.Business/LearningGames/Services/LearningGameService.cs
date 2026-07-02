@@ -292,7 +292,7 @@ public sealed class LearningGameService : ILearningGameService
             QrCodeTask qr => new QrCodeTask
             {
                 Instructions = qr.Instructions,
-                QrPayload = $"TASK-{SecureToken.Generate(16)}",
+                QrPayload = $"TASK-{SecureToken.Generate()}",
                 TimeLimitMinutes = qr.TimeLimitMinutes
             },
             GpsTask gps => new GpsTask

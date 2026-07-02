@@ -1,10 +1,12 @@
 import { Button, Paper, Stack, Typography } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
+import { BrandLogo } from '../../components/BrandLogo'
 
 export function DashboardPage() {
   return (
     <Paper sx={{ p: 4 }}>
-      <Stack spacing={1}>
+      <Stack spacing={2}>
+        <BrandLogo compact />
         <Typography component="h1" variant="h5">
           Öğretmen Paneli
         </Typography>

@@ -32,6 +32,7 @@ public static class LearningGameMapper
         game.ExpectedStudentCount,
         game.Status,
         game.GameCode,
+        game.CreatedAt,
         game.Tasks
             .OrderBy(task => task.Order)
             .Select(ToTaskResponse)

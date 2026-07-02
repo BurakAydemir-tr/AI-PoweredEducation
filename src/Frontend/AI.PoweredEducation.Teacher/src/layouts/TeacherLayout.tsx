@@ -6,9 +6,9 @@ import {
   Divider,
   Stack,
   Toolbar,
-  Typography,
 } from '@mui/material'
 import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom'
+import { BrandLogo } from '../components/BrandLogo'
 import { tokenStorage } from '../services/auth/tokenStorage'
 
 export function TeacherLayout() {
@@ -26,9 +26,9 @@ export function TeacherLayout() {
     <Box sx={{ minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="static" elevation={0}>
         <Toolbar>
-          <Typography component="div" variant="h6" sx={{ flexGrow: 1 }}>
-            AI Powered Education
-          </Typography>
+          <Box component={RouterLink} to="/dashboard" sx={{ flexGrow: 1, textDecoration: 'none' }}>
+            <BrandLogo compact inverted />
+          </Box>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
             <Button color="inherit" component={RouterLink} to="/games">
               Oyunlar
@@ -40,9 +40,9 @@ export function TeacherLayout() {
                   orientation="vertical"
                   sx={{ borderColor: 'rgba(255,255,255,0.35)' }}
                 />
-                <Typography color="inherit" variant="body2">
+                <Box component="span" sx={{ color: 'inherit', fontSize: 14 }}>
                   {teacherName}
-                </Typography>
+                </Box>
               </>
             )}
             <Button color="inherit" onClick={handleLogout}>

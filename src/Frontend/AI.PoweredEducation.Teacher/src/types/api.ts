@@ -35,6 +35,7 @@ export type LearningGame = {
   expectedStudentCount: number
   status: LearningGameStatus
   gameCode: string
+  createdAt: string
   tasks: LearningTask[]
 }
 
