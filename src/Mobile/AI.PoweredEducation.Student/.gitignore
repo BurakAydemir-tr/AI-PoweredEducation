@@ -1,0 +1,13 @@
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.iml
+build/
+coverage/
+
+android/.gradle/
+android/app/build/
+ios/Flutter/.last_build_id
+ios/Pods/
+ios/.symlinks/
