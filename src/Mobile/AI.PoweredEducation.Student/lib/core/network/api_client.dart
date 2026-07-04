@@ -29,15 +29,43 @@ ApiException mapDioException(DioException exception) {
   final statusCode = exception.response?.statusCode;
 
   if (responseData is Map<String, dynamic>) {
-    final message = responseData['message'] ?? responseData['title'];
+    final message = responseData['detail'] ??
+        responseData['message'] ??
+        responseData['title'];
 
     if (message is String && message.isNotEmpty) {
-      return ApiException(message, statusCode: statusCode);
+      return ApiException(
+        _translateApiMessage(message),
+        statusCode: statusCode,
+      );
     }
   }
 
   return ApiException(
-    exception.message ?? 'The request could not be completed.',
+    exception.message ?? 'İstek tamamlanamadı.',
     statusCode: statusCode,
   );
+}
+
+String _translateApiMessage(String message) {
+  if (message.startsWith('BusinessRule.')) {
+    return 'İşlem şu anda tamamlanamıyor. Lütfen bilgileri kontrol edip tekrar dene.';
+  }
+
+  return switch (message) {
+    'Student name is already in use in this game.' =>
+      'Bu oyunda bu öğrenci adı zaten kullanılıyor. Farklı bir ad deneyebilirsin.',
+    'The student name is already in use in this game.' =>
+      'Bu oyunda bu öğrenci adı zaten kullanılıyor. Farklı bir ad deneyebilirsin.',
+    'The active game has no tasks.' => 'Aktif oyunda görev bulunmuyor.',
+    'The session has no unfinished task.' =>
+      'Bu oturumda tamamlanmamış görev bulunmuyor.',
+    'The student session has ended.' => 'Öğrenci oturumu sona erdi.',
+    'Incorrect answer. Try again.' => 'Cevap yanlış. Bir daha denemelisin.',
+    'Incorrect answer. The correct answer is shown.' =>
+      'Cevap yanlış. Doğru cevap gösterildi.',
+    'Correct answer.' => 'Cevap doğru.',
+    'Resource.NotFound' => 'Oyun bulunamadı. Oyun kodunu kontrol et.',
+    _ => message,
+  };
 }

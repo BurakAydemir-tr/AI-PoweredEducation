@@ -3,11 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
-  testWidgets('shows the join screen', (tester) async {
+  testWidgets('katılım ekranını gösterir', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: StudentApp()));
 
-    expect(find.text('Join Learning Game'), findsOneWidget);
-    expect(find.text('Game Code'), findsOneWidget);
-    expect(find.text('Student Name'), findsOneWidget);
+    expect(find.text('Oyuna Katıl'), findsOneWidget);
+    expect(find.text('Oyun Kodu'), findsOneWidget);
+    expect(find.text('Öğrenci Adı'), findsOneWidget);
+    expect(find.text('Katıl'), findsOneWidget);
   });
 }

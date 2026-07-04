@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_exception.dart';
 import '../../../core/storage/session_token_storage.dart';
+import '../../quiz/data/student_progress_response.dart';
 import 'join_game_request.dart';
 import 'join_game_response.dart';
 
@@ -29,12 +30,29 @@ class StudentSessionApi {
 
       final data = response.data;
       if (data == null) {
-        throw const ApiException('Join response was empty.');
+        throw const ApiException('Katılım yanıtı boş geldi.');
       }
 
       final joinResponse = JoinGameResponse.fromJson(data);
       await _tokenStorage.save(joinResponse.sessionToken);
       return joinResponse;
+    } on DioException catch (exception) {
+      throw mapDioException(exception);
+    }
+  }
+
+  Future<StudentProgressResponse> getProgress() async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/student-sessions/progress',
+      );
+
+      final data = response.data;
+      if (data == null) {
+        throw const ApiException('İlerleme yanıtı boş geldi.');
+      }
+
+      return StudentProgressResponse.fromJson(data);
     } on DioException catch (exception) {
       throw mapDioException(exception);
     }

@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/routing/app_routes.dart';
+import '../../../app/theme/app_colors.dart';
 import '../../../core/network/api_exception.dart';
+import '../../game_lobby/presentation/game_lobby_screen.dart';
 import '../data/join_game_request.dart';
 import '../data/student_session_api.dart';
 
@@ -21,6 +23,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
   final _studentNameController = TextEditingController();
 
   bool _isSubmitting = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -34,10 +37,13 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
 
     try {
-      await ref.read(studentSessionApiProvider).join(
+      final joinResponse = await ref.read(studentSessionApiProvider).join(
             JoinGameRequest(
               gameCode: _gameCodeController.text.trim().toUpperCase(),
               studentName: _studentNameController.text.trim(),
@@ -48,15 +54,16 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
         return;
       }
 
-      context.go(AppRoutes.gameLobby);
+      context.go(
+        AppRoutes.gameLobby,
+        extra: GameLobbyScreenArgs(currentTask: joinResponse.currentTask),
+      );
     } on ApiException catch (exception) {
       if (!mounted) {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(exception.message)),
-      );
+      setState(() => _errorMessage = exception.message);
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);
@@ -82,13 +89,13 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      'Join Learning Game',
+                      'Oyuna Katıl',
                       style: theme.textTheme.headlineMedium,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter your game code and student name.',
+                      'Oyun kodunu ve öğrenci adını gir.',
                       style: theme.textTheme.bodyLarge,
                       textAlign: TextAlign.center,
                     ),
@@ -96,7 +103,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                     TextFormField(
                       controller: _gameCodeController,
                       decoration: const InputDecoration(
-                        labelText: 'Game Code',
+                        labelText: 'Oyun Kodu',
                       ),
                       textCapitalization: TextCapitalization.characters,
                       inputFormatters: [
@@ -108,10 +115,10 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                       validator: (value) {
                         final gameCode = value?.trim() ?? '';
                         if (gameCode.isEmpty) {
-                          return 'Game code is required.';
+                          return 'Oyun kodu zorunludur.';
                         }
                         if (gameCode.length != 6) {
-                          return 'Game code must be 6 characters.';
+                          return 'Oyun kodu 6 karakter olmalıdır.';
                         }
                         return null;
                       },
@@ -120,7 +127,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                     TextFormField(
                       controller: _studentNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Student Name',
+                        labelText: 'Öğrenci Adı',
                       ),
                       textInputAction: TextInputAction.done,
                       onFieldSubmitted: (_) {
@@ -131,11 +138,15 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                       validator: (value) {
                         final studentName = value?.trim() ?? '';
                         if (studentName.isEmpty) {
-                          return 'Student name is required.';
+                          return 'Öğrenci adı zorunludur.';
                         }
                         return null;
                       },
                     ),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      _JoinErrorMessage(message: _errorMessage!),
+                    ],
                     const SizedBox(height: 24),
                     FilledButton(
                       onPressed: _isSubmitting ? null : _submit,
@@ -144,13 +155,54 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
                               dimension: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Join Game'),
+                          : const Text('Katıl'),
                     ),
                   ],
                 ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _JoinErrorMessage extends StatelessWidget {
+  const _JoinErrorMessage({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.danger.withValues(alpha: 0.08),
+        border: Border.all(color: AppColors.danger),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              color: AppColors.danger,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.danger,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -6,10 +6,10 @@ class GameCompleteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Game Complete')),
+      appBar: AppBar(title: const Text('Oyun Tamamlandı')),
       body: const SafeArea(
         child: Center(
-          child: Text('Game complete summary will be shown here.'),
+          child: Text('Oyun tamamlama özeti burada gösterilecek.'),
         ),
       ),
     );

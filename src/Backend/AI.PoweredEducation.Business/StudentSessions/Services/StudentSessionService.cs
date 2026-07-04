@@ -147,7 +147,7 @@ public sealed class StudentSessionService : IStudentSessionService
             return await AdvanceAndSaveAsync(session, cancellationToken, "Correct answer.");
         }
 
-        if (attempt.AttemptCount >= 4)
+        if (attempt.AttemptCount >= 3)
         {
             attempt.ScoreEarned = 0;
             CompleteAttempt(attempt, now);

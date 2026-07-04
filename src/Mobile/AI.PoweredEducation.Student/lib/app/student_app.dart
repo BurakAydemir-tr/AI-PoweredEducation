@@ -12,7 +12,7 @@ class StudentApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'AI-Powered Education',
+      title: 'AI Destekli Eğitim',
       theme: AppTheme.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
