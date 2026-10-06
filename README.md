@@ -42,6 +42,13 @@ Repository şu anda yalnızca proje iskeletini içerir. Entity, DbContext, contr
 
 ## Derleme
 
+Gerekli sürümler: .NET SDK **9.0.318** (Visual Studio 2022 17.14 uyumlu),
+.NET Runtime ve ASP.NET Core Runtime **9.0.20** veya aynı 9.0 serisindeki daha yeni
+kararlı güvenlik yamaları. `global.json` SDK'nın 9.0.3xx bandında kalmasını,
+API runtime ayarları ise 9.0.20 altındaki runtime'larla açılmamasını sağlar.
+TargetFramework `net9.0` olarak korunur. Production hosting ortamında da bu
+runtime'lar bulunmalıdır; NuGet paket güncellemesi sistem runtime'ını güncellemez.
+
 ```powershell
 dotnet restore AI.PoweredEducation.sln --source https://api.nuget.org/v3/index.json
 dotnet build AI.PoweredEducation.sln
