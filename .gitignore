@@ -42,3 +42,13 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+
+# Local secrets and configuration overrides
+secrets.json
+secrets.*.json
+appsettings.Local.json
+appsettings.*.local.json
+appsettings.*.Local.json
+*.pfx
+*.p12
+*.key

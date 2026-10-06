@@ -49,7 +49,24 @@ dotnet build AI.PoweredEducation.sln
 
 ## Yerel yapılandırma
 
-API aşağıdaki değerleri environment variable veya güvenli bir configuration provider üzerinden bekler:
+Development ortamında API projesindeki `UserSecretsId` ve `WebApplication.CreateBuilder`
+sayesinde ASP.NET Core User Secrets otomatik yüklenir. Visual Studio'da API projesine
+sağ tıklayıp **Manage User Secrets** ile aşağıdaki anahtarları yerel secret dosyasına
+ekleyin. Aşağıdaki değerler yalnızca yer tutucudur; gerçek değerleri repository'ye,
+terminal çıktısına veya shell geçmişine yazmayın.
+
+```json
+{
+  "ConnectionStrings:DefaultConnection": "<local PostgreSQL connection string>",
+  "Jwt:Secret": "<new cryptographically random signing secret, at least 32 bytes>"
+}
+```
+
+User Secrets repository dışında saklanır ve yalnızca geliştirme içindir; şifreli
+bir production secret store değildir. Mevcut AI provider secret ayarlarını koruyun.
+
+Production ortamında `ASPNETCORE_ENVIRONMENT=Production` kullanın ve dağıtım
+ortamının secret yönetimi üzerinden aşağıdaki environment variable'ları sağlayın:
 
 ```text
 ConnectionStrings__DefaultConnection
@@ -57,6 +74,16 @@ Jwt__Secret
 ```
 
 `Jwt__Secret` en az 32 byte olmalıdır. Secret ve veritabanı parolaları repository'ye eklenmemelidir.
+
+Gerekli değerler yoksa uygulamanın açılması başarısız olur; kaynak kodunda varsayılan
+parola veya imzalama anahtarı bulunmaz. `.env` dosyaları ASP.NET Core tarafından
+otomatik yüklenmez; production ortam değişkenlerini hosting ortamı sağlamalıdır.
+
+Önceden Git'e eklenmiş JWT anahtarı ve PostgreSQL parolası ifşa olmuş kabul
+edilmelidir. Kullanıldıkları tüm ortamlarda JWT anahtarını ve veritabanı parolasını
+manuel olarak döndürün; mevcut refresh tokenları da iptal edin. User Secrets'a
+taşıma veritabanındaki parolayı değiştirmez. Git geçmişindeki eski değerleri
+silmek, rotasyonun yerine geçmez; geçmiş temizliği ayrı ve koordineli bir işlemdir.
 
 ## Veritabanı
 
