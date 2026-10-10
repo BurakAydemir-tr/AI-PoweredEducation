@@ -13,6 +13,8 @@ namespace AI.PoweredEducation.Business.ArtificialIntelligence.Providers;
 
 public sealed class OpenAiProvider : IAiProvider
 {
+    private const int MaximumResponseBytes = 256 * 1024;
+    private const int MaximumOutputTokens = 8192;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -93,6 +95,7 @@ public sealed class OpenAiProvider : IAiProvider
             new
             {
                 model = _options.Model,
+                max_output_tokens = MaximumOutputTokens,
                 input = new object[]
                 {
                     new
@@ -119,7 +122,11 @@ public sealed class OpenAiProvider : IAiProvider
             },
             options: JsonOptions);
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        await response.Content.LoadIntoBufferAsync(MaximumResponseBytes, cancellationToken);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)

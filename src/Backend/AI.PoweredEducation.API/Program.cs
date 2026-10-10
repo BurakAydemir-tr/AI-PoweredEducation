@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using AI.PoweredEducation.API.ExceptionHandling;
@@ -18,6 +19,23 @@ builder.Services.AddControllers();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+    {
+        var policy = context.GetEndpoint()?.Metadata.GetMetadata<EnableRateLimitingAttribute>();
+        if (policy?.PolicyName != AbuseRateLimitPolicies.AiGeneration)
+        {
+            return RateLimitPartition.GetNoLimiter("other-endpoints");
+        }
+
+        var teacherId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? $"anonymous:{context.Connection.RemoteIpAddress}";
+        return RateLimitPartition.GetConcurrencyLimiter(teacherId, _ =>
+            new ConcurrencyLimiterOptions
+            {
+                PermitLimit = 1,
+                QueueLimit = 0
+            });
+    });
 
     options.AddPolicy(AuthenticationRateLimitPolicies.Login, context =>
         RateLimitPartition.GetFixedWindowLimiter(
@@ -48,6 +66,29 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+    options.AddPolicy(AbuseRateLimitPolicies.StudentJoin, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 120,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+    options.AddPolicy(AbuseRateLimitPolicies.AiGeneration, context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? $"anonymous:{context.Connection.RemoteIpAddress}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromHours(1),
                 QueueLimit = 0,
                 AutoReplenishment = true
             }));
@@ -129,8 +170,8 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseCors();
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapControllers();
