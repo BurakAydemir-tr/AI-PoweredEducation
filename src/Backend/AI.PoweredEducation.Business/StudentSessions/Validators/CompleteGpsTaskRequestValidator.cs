@@ -7,7 +7,7 @@ public sealed class CompleteGpsTaskRequestValidator : AbstractValidator<Complete
 {
     public CompleteGpsTaskRequestValidator()
     {
-        RuleFor(request => request.Latitude).InclusiveBetween(-90, 90);
-        RuleFor(request => request.Longitude).InclusiveBetween(-180, 180);
+        RuleFor(request => request.Latitude).Must(double.IsFinite).InclusiveBetween(-90, 90);
+        RuleFor(request => request.Longitude).Must(double.IsFinite).InclusiveBetween(-180, 180);
     }
 }

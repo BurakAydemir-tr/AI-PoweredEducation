@@ -7,6 +7,7 @@ public sealed record StudentTaskResponse
     public Guid Id { get; init; }
     public LearningTaskType TaskType { get; init; }
     public int Order { get; init; }
+    public int AttemptCount { get; init; }
     public string? Question { get; init; }
     public string? OptionA { get; init; }
     public string? OptionB { get; init; }

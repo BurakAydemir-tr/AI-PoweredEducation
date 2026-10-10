@@ -7,7 +7,7 @@ public sealed class CreateQrCodeTaskRequestValidator : AbstractValidator<CreateQ
 {
     public CreateQrCodeTaskRequestValidator()
     {
-        RuleFor(request => request.Instructions).NotEmpty();
+        RuleFor(request => request.Instructions).NotEmpty().MaximumLength(2000);
         RuleFor(request => request.TimeLimitMinutes).GreaterThan(0);
         RuleFor(request => request.QrPayload)
             .MaximumLength(100)

@@ -7,9 +7,11 @@ public sealed class ReorderLearningTasksRequestValidator : AbstractValidator<Reo
 {
     public ReorderLearningTasksRequestValidator()
     {
-        RuleFor(request => request.TaskIds).NotNull().NotEmpty();
         RuleFor(request => request.TaskIds)
-            .Must(ids => ids.Distinct().Count() == ids.Count)
-            .WithMessage("TaskIds cannot contain duplicate identifiers.");
+            .Cascade(CascadeMode.Stop)
+            .NotNull()
+            .NotEmpty()
+            .Must(ids => ids.All(id => id != Guid.Empty) && ids.Distinct().Count() == ids.Count)
+            .WithMessage("TaskIds must contain distinct, non-empty identifiers.");
     }
 }

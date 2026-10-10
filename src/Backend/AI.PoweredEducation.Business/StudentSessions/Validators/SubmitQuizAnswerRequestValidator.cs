@@ -7,6 +7,8 @@ public sealed class SubmitQuizAnswerRequestValidator : AbstractValidator<SubmitQ
 {
     public SubmitQuizAnswerRequestValidator()
     {
+        RuleFor(request => request.TaskId).NotEmpty();
+        RuleFor(request => request.ExpectedAttemptCount).InclusiveBetween(0, 2);
         RuleFor(request => request.Answer).IsInEnum();
     }
 }

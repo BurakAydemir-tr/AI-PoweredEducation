@@ -6,6 +6,7 @@ class StudentTaskResponse {
     required this.id,
     required this.taskType,
     required this.order,
+    this.attemptCount = 0,
     this.question,
     this.optionA,
     this.optionB,
@@ -20,6 +21,7 @@ class StudentTaskResponse {
   final String id;
   final LearningTaskType taskType;
   final int order;
+  final int attemptCount;
   final String? question;
   final String? optionA;
   final String? optionB;
@@ -35,6 +37,7 @@ class StudentTaskResponse {
       id: json['id'] as String,
       taskType: LearningTaskType.fromJson(json['taskType'] as int),
       order: json['order'] as int,
+      attemptCount: json['attemptCount'] as int? ?? 0,
       question: json['question'] as String?,
       optionA: json['optionA'] as String?,
       optionB: json['optionB'] as String?,

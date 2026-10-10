@@ -2,6 +2,8 @@ using AI.PoweredEducation.DataAccess.Persistence;
 using AI.PoweredEducation.DataAccess.Repositories.Interfaces;
 using AI.PoweredEducation.Entity.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 
 namespace AI.PoweredEducation.DataAccess.Repositories;
 
@@ -39,6 +41,32 @@ public sealed class StudentSessionRepository : IStudentSessionRepository
             .SingleOrDefaultAsync(
                 session => session.SessionTokenHash == sessionTokenHash,
                 cancellationToken);
+    }
+
+    public async Task<T> ExecuteWithSessionLockAsync<T>(
+        string sessionTokenHash,
+        Func<Task<T>> action,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _dbContext.Database.BeginTransactionAsync(
+            _dbContext.Database.IsNpgsql() ? IsolationLevel.ReadCommitted : IsolationLevel.Serializable,
+            cancellationToken);
+
+        if (_dbContext.Database.IsNpgsql())
+        {
+            await using var command = _dbContext.Database.GetDbConnection().CreateCommand();
+            command.Transaction = transaction.GetDbTransaction();
+            command.CommandText = "SELECT \"Id\" FROM \"StudentSessions\" WHERE \"SessionTokenHash\" = @tokenHash FOR UPDATE";
+            var tokenParameter = command.CreateParameter();
+            tokenParameter.ParameterName = "tokenHash";
+            tokenParameter.Value = sessionTokenHash;
+            command.Parameters.Add(tokenParameter);
+            await command.ExecuteScalarAsync(cancellationToken);
+        }
+
+        var result = await action();
+        await transaction.CommitAsync(cancellationToken);
+        return result;
     }
 
     public async Task<IReadOnlyList<StudentSession>> GetFinishedForOwnedGameAsync(

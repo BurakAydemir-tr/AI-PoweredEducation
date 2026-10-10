@@ -101,7 +101,7 @@ public sealed class StudentSessionService : IStudentSessionService
             session.Id,
             session.StudentName,
             rawSessionToken,
-            StudentSessionMapper.ToTaskResponse(firstAttempt.LearningTask));
+            StudentSessionMapper.ToTaskResponse(firstAttempt));
     });
 
     public Task<Result<StudentProgressResponse>> GetProgressAsync(
@@ -116,7 +116,7 @@ public sealed class StudentSessionService : IStudentSessionService
     public Task<Result<StudentProgressResponse>> StartCurrentTaskAsync(
         string sessionToken,
         CancellationToken cancellationToken = default) =>
-        BusinessResult.FromAsync(async () =>
+        BusinessResult.FromAsync(() => WithSessionLockAsync(sessionToken, async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var attempt = GetCurrentAttempt(session)
@@ -124,17 +124,20 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.StartedAt ??= DateTimeOffset.UtcNow;
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return BuildProgress(session);
-    });
+    }, cancellationToken));
 
     public Task<Result<StudentProgressResponse>> SubmitQuizAnswerAsync(
         string sessionToken,
         SubmitQuizAnswerRequest request,
         CancellationToken cancellationToken = default) =>
-        BusinessResult.FromAsync(async () =>
+        BusinessResult.FromAsync(() => WithSessionLockAsync(sessionToken, async () =>
     {
         await _quizValidator.ValidateAndThrowAsync(request, cancellationToken);
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var attempt = RequireCurrentAttempt<QuizTask>(session);
+        if (attempt.LearningTaskId != request.TaskId ||
+            attempt.AttemptCount != request.ExpectedAttemptCount)
+            throw new BusinessRuleException("Quiz progress has changed. Reload the current task.");
         var quiz = (QuizTask)attempt.LearningTask;
         var now = DateTimeOffset.UtcNow;
         attempt.StartedAt ??= now;
@@ -160,13 +163,13 @@ public sealed class StudentSessionService : IStudentSessionService
 
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return BuildProgress(session, "Incorrect answer. Try again.");
-    });
+    }, cancellationToken));
 
     public Task<Result<StudentProgressResponse>> ScanQrCodeAsync(
         string sessionToken,
         ScanQrCodeRequest request,
         CancellationToken cancellationToken = default) =>
-        BusinessResult.FromAsync(async () =>
+        BusinessResult.FromAsync(() => WithSessionLockAsync(sessionToken, async () =>
     {
         await _qrValidator.ValidateAndThrowAsync(request, cancellationToken);
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
@@ -191,13 +194,13 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.ScoreEarned = 100;
         CompleteAttempt(attempt, now);
         return await AdvanceAndSaveAsync(session, cancellationToken, "QR task completed.");
-    });
+    }, cancellationToken));
 
     public Task<Result<StudentProgressResponse>> CompleteGpsTaskAsync(
         string sessionToken,
         CompleteGpsTaskRequest request,
         CancellationToken cancellationToken = default) =>
-        BusinessResult.FromAsync(async () =>
+        BusinessResult.FromAsync(() => WithSessionLockAsync(sessionToken, async () =>
     {
         await _gpsValidator.ValidateAndThrowAsync(request, cancellationToken);
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
@@ -225,12 +228,12 @@ public sealed class StudentSessionService : IStudentSessionService
         attempt.ScoreEarned = 100;
         CompleteAttempt(attempt, now);
         return await AdvanceAndSaveAsync(session, cancellationToken, "Target reached.");
-    });
+    }, cancellationToken));
 
     public Task<Result<StudentProgressResponse>> TimeoutCurrentTaskAsync(
         string sessionToken,
         CancellationToken cancellationToken = default) =>
-        BusinessResult.FromAsync(async () =>
+        BusinessResult.FromAsync(() => WithSessionLockAsync(sessionToken, async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var attempt = GetCurrentAttempt(session)
@@ -239,12 +242,12 @@ public sealed class StudentSessionService : IStudentSessionService
             throw new BusinessRuleException("Quiz tasks cannot be timed out.");
         TimeoutAttempt(attempt, DateTimeOffset.UtcNow);
         return await AdvanceAndSaveAsync(session, cancellationToken, "Task timed out.");
-    });
+    }, cancellationToken));
 
     public Task<Result<ResultResponse>> LeaveAsync(
         string sessionToken,
         CancellationToken cancellationToken = default) =>
-        BusinessResult.FromAsync(async () =>
+        BusinessResult.FromAsync(() => WithSessionLockAsync(sessionToken, async () =>
     {
         var session = await GetActiveSessionAsync(sessionToken, cancellationToken);
         var result = await FinishSessionAsync(
@@ -254,7 +257,14 @@ public sealed class StudentSessionService : IStudentSessionService
             cancellationToken);
         await _sessionRepository.SaveChangesAsync(cancellationToken);
         return StudentSessionMapper.ToResultResponse(result);
-    });
+    }, cancellationToken));
+
+    private Task<T> WithSessionLockAsync<T>(
+        string sessionToken,
+        Func<Task<T>> action,
+        CancellationToken cancellationToken) =>
+        _sessionRepository.ExecuteWithSessionLockAsync(
+            SecureToken.Hash(sessionToken), action, cancellationToken);
 
     private async Task<StudentProgressResponse> AdvanceAndSaveAsync(
         StudentSession session,
@@ -285,7 +295,7 @@ public sealed class StudentSessionService : IStudentSessionService
         var currentAttempt = GetCurrentAttempt(session);
         return new StudentProgressResponse(
             session.Id,
-            currentAttempt is null ? null : StudentSessionMapper.ToTaskResponse(currentAttempt.LearningTask),
+            currentAttempt is null ? null : StudentSessionMapper.ToTaskResponse(currentAttempt),
             session.Result is null ? null : StudentSessionMapper.ToResultResponse(session.Result),
             feedback,
             revealedCorrectAnswer);
