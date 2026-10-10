@@ -13,6 +13,8 @@ namespace AI.PoweredEducation.Business.ArtificialIntelligence.Providers;
 public sealed class GeminiProvider : IAiProvider
 {
     private const int MaximumGenerationAttempts = 3;
+    private const int MaximumResponseBytes = 256 * 1024;
+    private const int MaximumOutputTokens = 8192;
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -122,6 +124,7 @@ public sealed class GeminiProvider : IAiProvider
             {
                 model = _options.Model,
                 input = prompt,
+                generation_config = new { max_output_tokens = MaximumOutputTokens },
                 response_format = new
                 {
                     type = "text",
@@ -131,7 +134,11 @@ public sealed class GeminiProvider : IAiProvider
             },
             options: JsonOptions);
 
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+        await response.Content.LoadIntoBufferAsync(MaximumResponseBytes, cancellationToken);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)

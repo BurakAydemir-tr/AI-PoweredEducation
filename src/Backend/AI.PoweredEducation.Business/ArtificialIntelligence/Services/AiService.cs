@@ -1,7 +1,7 @@
 using AI.PoweredEducation.Business.ArtificialIntelligence.Dtos;
-using AI.PoweredEducation.Business.ArtificialIntelligence.Exceptions;
 using AI.PoweredEducation.Business.ArtificialIntelligence.Interfaces;
 using AI.PoweredEducation.Core.Common;
+using Microsoft.Extensions.Logging;
 
 namespace AI.PoweredEducation.Business.ArtificialIntelligence.Services;
 
@@ -9,12 +9,17 @@ public sealed class AiService : IAiService
 {
     private const int MinimumTaskCount = 1;
     private const int MaximumTaskCount = 20;
+    private const int MaximumGradeLevelLength = 50;
+    private const int MaximumSubjectLength = 100;
+    private const int MaximumTopicLength = 200;
 
     private readonly IAiProvider _provider;
+    private readonly ILogger<AiService> _logger;
 
-    public AiService(IAiProvider provider)
+    public AiService(IAiProvider provider, ILogger<AiService> logger)
     {
         _provider = provider;
+        _logger = logger;
     }
 
     public async Task<Result<IReadOnlyCollection<GeneratedQuizTask>>> GenerateQuizTasksAsync(
@@ -35,11 +40,12 @@ public sealed class AiService : IAiService
                 taskCount,
                 cancellationToken));
         }
-        catch (AiProviderException exception)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
+            _logger.LogError(exception, "AI quiz task generation failed.");
             return Result.Failure<IReadOnlyCollection<GeneratedQuizTask>>(Error.ExternalService(
                 "AI.ProviderFailed",
-                exception.Message));
+                "AI generation is temporarily unavailable."));
         }
     }
 
@@ -61,11 +67,12 @@ public sealed class AiService : IAiService
                 taskCount,
                 cancellationToken));
         }
-        catch (AiProviderException exception)
+        catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
+            _logger.LogError(exception, "AI QR code task generation failed.");
             return Result.Failure<IReadOnlyCollection<GeneratedQrCodeTask>>(Error.ExternalService(
                 "AI.ProviderFailed",
-                exception.Message));
+                "AI generation is temporarily unavailable."));
         }
     }
 
@@ -77,15 +84,27 @@ public sealed class AiService : IAiService
         {
             errors.Add("Grade level is required.");
         }
+        else if (context.GradeLevel.Length > MaximumGradeLevelLength)
+        {
+            errors.Add($"Grade level must be at most {MaximumGradeLevelLength} characters.");
+        }
 
         if (string.IsNullOrWhiteSpace(context.Subject))
         {
             errors.Add("Subject is required.");
         }
+        else if (context.Subject.Length > MaximumSubjectLength)
+        {
+            errors.Add($"Subject must be at most {MaximumSubjectLength} characters.");
+        }
 
         if (string.IsNullOrWhiteSpace(context.Topic))
         {
             errors.Add("Topic is required.");
+        }
+        else if (context.Topic.Length > MaximumTopicLength)
+        {
+            errors.Add($"Topic must be at most {MaximumTopicLength} characters.");
         }
 
         if (context.ExpectedStudentCount <= 0)

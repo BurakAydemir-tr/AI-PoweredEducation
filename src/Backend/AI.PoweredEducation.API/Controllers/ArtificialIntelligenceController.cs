@@ -1,13 +1,16 @@
 using AI.PoweredEducation.API.Results;
+using AI.PoweredEducation.API.Security;
 using AI.PoweredEducation.Business.ArtificialIntelligence.Dtos;
 using AI.PoweredEducation.Business.ArtificialIntelligence.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AI.PoweredEducation.API.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting(AbuseRateLimitPolicies.AiGeneration)]
 [Route("api/ai")]
 public sealed class ArtificialIntelligenceController : ControllerBase
 {

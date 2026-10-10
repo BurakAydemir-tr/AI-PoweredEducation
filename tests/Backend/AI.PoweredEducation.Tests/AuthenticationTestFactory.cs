@@ -1,4 +1,7 @@
+using AI.PoweredEducation.Business.ArtificialIntelligence.Interfaces;
 using AI.PoweredEducation.DataAccess.Persistence;
+using AI.PoweredEducation.Entity.Entities;
+using AI.PoweredEducation.Entity.Enums;
 using AI.PoweredEducation.Entity.Identity;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
@@ -17,9 +20,11 @@ namespace AI.PoweredEducation.Tests;
 public sealed class AuthenticationTestFactory : WebApplicationFactory<Program>
 {
     private readonly SqliteConnection _connection = new("Data Source=:memory:");
+    private readonly IAiProvider? _aiProvider;
 
-    public AuthenticationTestFactory()
+    public AuthenticationTestFactory(IAiProvider? aiProvider = null)
     {
+        _aiProvider = aiProvider;
         _connection.Open();
     }
 
@@ -43,6 +48,11 @@ public sealed class AuthenticationTestFactory : WebApplicationFactory<Program>
             services.RemoveAll<IDbContextOptionsConfiguration<ApplicationDbContext>>();
             services.RemoveAll<IDatabaseProvider>();
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlite(_connection));
+            if (_aiProvider is not null)
+            {
+                services.RemoveAll<IAiProvider>();
+                services.AddSingleton(_aiProvider);
+            }
         });
     }
 
@@ -67,6 +77,42 @@ public sealed class AuthenticationTestFactory : WebApplicationFactory<Program>
             LastName = "Teacher"
         }, password);
         Assert.True(result.Succeeded, string.Join(", ", result.Errors.Select(error => error.Description)));
+    }
+
+    public async Task SeedActiveGameAsync(string teacherEmail, string gameCode, int expectedStudentCount)
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var teacher = await users.FindByEmailAsync(teacherEmail);
+        Assert.NotNull(teacher);
+        var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        database.LearningGames.Add(new LearningGame
+        {
+            Id = Guid.NewGuid(),
+            TeacherId = teacher.Id,
+            GradeLevel = "5",
+            Subject = "Science",
+            Topic = "Plants",
+            EnvironmentType = GameEnvironmentType.Indoor,
+            ExpectedStudentCount = expectedStudentCount,
+            Status = LearningGameStatus.Active,
+            GameCode = gameCode,
+            Tasks = new List<LearningTask>
+            {
+                new QuizTask
+                {
+                    Id = Guid.NewGuid(),
+                    Order = 1,
+                    Question = "What grows?",
+                    OptionA = "Plants",
+                    OptionB = "Rocks",
+                    OptionC = "Glass",
+                    OptionD = "Metal",
+                    CorrectAnswer = QuizAnswerOption.A
+                }
+            }
+        });
+        await database.SaveChangesAsync();
     }
 
     public async Task<(int FailedCount, bool LockedOut)> GetLockoutStateAsync(string email)

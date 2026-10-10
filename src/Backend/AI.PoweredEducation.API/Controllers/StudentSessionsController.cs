@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using AI.PoweredEducation.API.Results;
+using AI.PoweredEducation.API.Security;
 using AI.PoweredEducation.Business.StudentSessions.Dtos;
 using AI.PoweredEducation.Business.StudentSessions.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AI.PoweredEducation.API.Controllers;
 
@@ -18,6 +20,7 @@ public sealed class StudentSessionsController : ControllerBase
     public StudentSessionsController(IStudentSessionService service) => _service = service;
 
     [HttpPost("join")]
+    [EnableRateLimiting(AbuseRateLimitPolicies.StudentJoin)]
     public async Task<ActionResult<JoinGameResponse>> Join(
         JoinGameRequest request,
         CancellationToken cancellationToken) =>
