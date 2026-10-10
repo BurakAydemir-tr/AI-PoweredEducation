@@ -1,8 +1,10 @@
 using AI.PoweredEducation.API.Results;
+using AI.PoweredEducation.API.Security;
 using AI.PoweredEducation.Business.Authentication.Dtos;
 using AI.PoweredEducation.Business.Authentication.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AI.PoweredEducation.API.Controllers;
 
@@ -19,6 +21,7 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("register")]
+    [EnableRateLimiting(AuthenticationRateLimitPolicies.Register)]
     [ProducesResponseType<AuthenticationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuthenticationResponse>> Register(
@@ -30,6 +33,7 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting(AuthenticationRateLimitPolicies.Login)]
     [ProducesResponseType<AuthenticationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
@@ -42,6 +46,7 @@ public sealed class AuthenticationController : ControllerBase
     }
 
     [HttpPost("refresh")]
+    [EnableRateLimiting(AuthenticationRateLimitPolicies.Refresh)]
     [ProducesResponseType<AuthenticationResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]

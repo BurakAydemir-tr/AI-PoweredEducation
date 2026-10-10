@@ -35,11 +35,21 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "Connection string 'DefaultConnection' is not configured.");
 
+        var maxFailedAccessAttempts = configuration.GetValue("Authentication:Lockout:MaxFailedAccessAttempts", 5);
+        var lockoutDurationMinutes = configuration.GetValue("Authentication:Lockout:DurationMinutes", 15);
+        if (maxFailedAccessAttempts <= 0 || lockoutDurationMinutes <= 0)
+        {
+            throw new InvalidOperationException("Authentication lockout settings must be positive.");
+        }
+
         services.AddDataAccess(connectionString);
 
         services.AddIdentityCore<ApplicationUser>(options =>
             {
                 options.User.RequireUniqueEmail = true;
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = maxFailedAccessAttempts;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockoutDurationMinutes);
             })
             .AddRoles<IdentityRole<Guid>>()
             .AddEntityFrameworkStores<ApplicationDbContext>();

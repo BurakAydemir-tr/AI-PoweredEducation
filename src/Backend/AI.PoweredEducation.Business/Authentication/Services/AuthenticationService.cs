@@ -79,11 +79,26 @@ public sealed class AuthenticationService : IAuthenticationService
     {
         await _loginRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
         var user = await _userManager.FindByEmailAsync(request.Email.Trim());
-        if (user is null || !await _userManager.CheckPasswordAsync(user, request.Password))
+        if (user is null || await _userManager.IsLockedOutAsync(user))
         {
-            throw new AuthenticationServiceException(
-                AuthenticationErrorCode.InvalidCredentials,
-                "Email or password is invalid.");
+            throw InvalidCredentials();
+        }
+
+        if (!await _userManager.CheckPasswordAsync(user, request.Password))
+        {
+            var failureResult = await _userManager.AccessFailedAsync(user);
+            if (!failureResult.Succeeded)
+            {
+                throw new InvalidOperationException("Failed to record the login attempt.");
+            }
+
+            throw InvalidCredentials();
+        }
+
+        var resetResult = await _userManager.ResetAccessFailedCountAsync(user);
+        if (!resetResult.Succeeded)
+        {
+            throw new InvalidOperationException("Failed to reset the failed login count.");
         }
 
         return await CreateAndPersistTokensAsync(user, cancellationToken);
@@ -168,5 +183,12 @@ public sealed class AuthenticationService : IAuthenticationService
         return new AuthenticationServiceException(
             AuthenticationErrorCode.InvalidRefreshToken,
             "Refresh token is invalid or expired.");
+    }
+
+    private static AuthenticationServiceException InvalidCredentials()
+    {
+        return new AuthenticationServiceException(
+            AuthenticationErrorCode.InvalidCredentials,
+            "Email or password is invalid.");
     }
 }
