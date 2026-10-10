@@ -13,6 +13,11 @@ public interface IStudentSessionRepository
         string sessionTokenHash,
         CancellationToken cancellationToken = default);
 
+    Task<T> ExecuteWithSessionLockAsync<T>(
+        string sessionTokenHash,
+        Func<Task<T>> action,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<StudentSession>> GetFinishedForOwnedGameAsync(
         Guid learningGameId,
         Guid teacherId,

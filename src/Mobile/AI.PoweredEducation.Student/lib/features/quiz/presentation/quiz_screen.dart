@@ -9,6 +9,7 @@ import '../../../core/models/quiz_answer_option.dart';
 import '../../../core/models/student_task_response.dart';
 import '../../../core/network/api_exception.dart';
 import '../../game_lobby/presentation/game_lobby_screen.dart';
+import '../../join/data/student_session_api.dart';
 import '../data/quiz_api.dart';
 import '../data/submit_quiz_answer_request.dart';
 
@@ -47,11 +48,18 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
   bool _isTaskResolved = false;
 
   @override
+  void initState() {
+    super.initState();
+    _wrongAttemptCount = widget.task.attemptCount;
+  }
+
+  @override
   void didUpdateWidget(covariant QuizScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.task.id != widget.task.id) {
       _resetTaskState();
+      _wrongAttemptCount = widget.task.attemptCount;
     }
   }
 
@@ -79,7 +87,11 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
 
     try {
       final progress = await ref.read(quizApiProvider).submitAnswer(
-            SubmitQuizAnswerRequest(answer: answer),
+            SubmitQuizAnswerRequest(
+              taskId: widget.task.id,
+              expectedAttemptCount: _wrongAttemptCount,
+              answer: answer,
+            ),
           );
 
       if (!mounted) {
@@ -112,12 +124,32 @@ class _QuizScreenState extends ConsumerState<QuizScreen> {
       }
 
       setState(() {
-        _wrongAttemptCount += 1;
+        _wrongAttemptCount = progress.currentTask?.attemptCount ?? _wrongAttemptCount;
         _message = 'Cevap yanlış. Bir daha denemelisin.';
       });
     } on ApiException catch (exception) {
       if (!mounted) {
         return;
+      }
+
+      if (exception.statusCode == 409) {
+        try {
+          final latest = await ref.read(studentSessionApiProvider).getProgress();
+          if (!mounted) return;
+          setState(() {
+            if (latest.currentTask?.id == widget.task.id) {
+              _wrongAttemptCount = latest.currentTask!.attemptCount;
+              _message = 'İlerleme güncellendi. Cevabını tekrar seçebilirsin.';
+            } else {
+              _nextTask = latest.currentTask;
+              _isTaskResolved = true;
+              _message = 'Görev ilerlemesi güncellendi.';
+            }
+          });
+          return;
+        } on ApiException {
+          // Fall through to the existing error message if progress cannot load.
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

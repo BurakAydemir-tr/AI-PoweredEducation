@@ -79,13 +79,25 @@ public sealed class AuthenticationTestFactory : WebApplicationFactory<Program>
         Assert.True(result.Succeeded, string.Join(", ", result.Errors.Select(error => error.Description)));
     }
 
-    public async Task SeedActiveGameAsync(string teacherEmail, string gameCode, int expectedStudentCount)
+    public async Task SeedActiveGameAsync(string teacherEmail, string gameCode, int expectedStudentCount,
+        int quizTaskCount = 1)
     {
         await using var scope = Services.CreateAsyncScope();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
         var teacher = await users.FindByEmailAsync(teacherEmail);
         Assert.NotNull(teacher);
         var database = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var tasks = Enumerable.Range(1, quizTaskCount).Select(order => (LearningTask)new QuizTask
+        {
+            Id = Guid.NewGuid(),
+            Order = order,
+            Question = $"What grows? {order}",
+            OptionA = "Plants",
+            OptionB = "Rocks",
+            OptionC = "Glass",
+            OptionD = "Metal",
+            CorrectAnswer = QuizAnswerOption.A
+        }).ToList();
         database.LearningGames.Add(new LearningGame
         {
             Id = Guid.NewGuid(),
@@ -97,20 +109,7 @@ public sealed class AuthenticationTestFactory : WebApplicationFactory<Program>
             ExpectedStudentCount = expectedStudentCount,
             Status = LearningGameStatus.Active,
             GameCode = gameCode,
-            Tasks = new List<LearningTask>
-            {
-                new QuizTask
-                {
-                    Id = Guid.NewGuid(),
-                    Order = 1,
-                    Question = "What grows?",
-                    OptionA = "Plants",
-                    OptionB = "Rocks",
-                    OptionC = "Glass",
-                    OptionD = "Metal",
-                    CorrectAnswer = QuizAnswerOption.A
-                }
-            }
+            Tasks = tasks
         });
         await database.SaveChangesAsync();
     }

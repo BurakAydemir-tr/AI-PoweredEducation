@@ -5,13 +5,14 @@ namespace AI.PoweredEducation.Business.StudentSessions.Mappings;
 
 public static class StudentSessionMapper
 {
-    public static StudentTaskResponse ToTaskResponse(LearningTask task) => task switch
+    public static StudentTaskResponse ToTaskResponse(TaskAttempt attempt) => attempt.LearningTask switch
     {
         QuizTask quiz => new StudentTaskResponse
         {
             Id = quiz.Id,
             TaskType = quiz.TaskType,
             Order = quiz.Order,
+            AttemptCount = attempt.AttemptCount,
             Question = quiz.Question,
             OptionA = quiz.OptionA,
             OptionB = quiz.OptionB,
@@ -23,6 +24,7 @@ public static class StudentSessionMapper
             Id = qr.Id,
             TaskType = qr.TaskType,
             Order = qr.Order,
+            AttemptCount = attempt.AttemptCount,
             Instructions = qr.Instructions,
             TimeLimitMinutes = qr.TimeLimitMinutes
         },
@@ -31,12 +33,13 @@ public static class StudentSessionMapper
             Id = gps.Id,
             TaskType = gps.TaskType,
             Order = gps.Order,
+            AttemptCount = attempt.AttemptCount,
             Instructions = gps.Instructions,
             TargetLatitude = gps.TargetLatitude,
             TargetLongitude = gps.TargetLongitude,
             TimeLimitMinutes = gps.TimeLimitMinutes
         },
-        _ => throw new InvalidOperationException($"Unsupported task type: {task.GetType().Name}.")
+        _ => throw new InvalidOperationException($"Unsupported task type: {attempt.LearningTask.GetType().Name}.")
     };
 
     public static ResultResponse ToResultResponse(Result result) => new(
