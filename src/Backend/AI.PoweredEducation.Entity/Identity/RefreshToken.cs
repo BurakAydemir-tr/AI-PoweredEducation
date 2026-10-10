@@ -6,6 +6,10 @@ public sealed class RefreshToken : BaseEntity
 {
     public Guid UserId { get; set; }
 
+    public Guid FamilyId { get; set; }
+
+    public DateTimeOffset? FamilyRevokedAt { get; set; }
+
     public string TokenHash { get; set; } = string.Empty;
 
     public DateTimeOffset ExpiresAt { get; set; }

@@ -57,4 +57,15 @@ public sealed class AuthenticationController : ControllerBase
         return (await _authenticationService.RefreshAsync(request, cancellationToken))
             .ToActionResult(this);
     }
+
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Logout(
+        RefreshTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _authenticationService.LogoutAsync(request, cancellationToken);
+        return NoContent();
+    }
 }

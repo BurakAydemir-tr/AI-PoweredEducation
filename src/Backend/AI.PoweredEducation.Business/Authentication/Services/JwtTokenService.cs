@@ -65,9 +65,11 @@ public sealed class JwtTokenService : IJwtTokenService
         DateTimeOffset issuedAt)
     {
         var rawToken = SecureToken.Generate();
+        var tokenId = Guid.NewGuid();
         var entity = new RefreshToken
         {
-            Id = Guid.NewGuid(),
+            Id = tokenId,
+            FamilyId = tokenId,
             UserId = user.Id,
             TokenHash = SecureToken.Hash(rawToken),
             ExpiresAt = issuedAt.AddDays(_options.RefreshTokenLifetimeDays),
