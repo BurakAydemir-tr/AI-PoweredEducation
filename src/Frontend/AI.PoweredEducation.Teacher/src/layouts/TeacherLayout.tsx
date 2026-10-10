@@ -9,6 +9,7 @@ import {
 } from '@mui/material'
 import { Link as RouterLink, Outlet, useNavigate } from 'react-router-dom'
 import { BrandLogo } from '../components/BrandLogo'
+import { logout } from '../services/auth/authApi'
 import { tokenStorage } from '../services/auth/tokenStorage'
 
 export function TeacherLayout() {
@@ -17,9 +18,18 @@ export function TeacherLayout() {
   const lastName = tokenStorage.getLastName()
   const teacherName = [firstName, lastName].filter(Boolean).join(' ')
 
-  const handleLogout = () => {
-    tokenStorage.clear()
-    navigate('/login', { replace: true })
+  const handleLogout = async () => {
+    try {
+      const refreshToken = tokenStorage.getRefreshToken()
+      if (refreshToken) {
+        await logout(refreshToken)
+      }
+    } catch {
+      // Local credentials still need to be removed if the server is unavailable.
+    } finally {
+      tokenStorage.clear()
+      navigate('/login', { replace: true })
+    }
   }
 
   return (

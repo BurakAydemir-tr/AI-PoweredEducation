@@ -119,19 +119,39 @@ public sealed class AuthenticationService : IAuthenticationService
                 token => token.TokenHash == tokenHash,
                 cancellationToken);
 
-        if (currentToken is null ||
-            currentToken.RevokedAt is not null ||
-            currentToken.ExpiresAt <= now)
+        if (currentToken is null)
+        {
+            throw InvalidRefreshToken();
+        }
+
+        if (currentToken.RevokedAt is not null &&
+            currentToken.ReplacedByTokenHash is not null)
+        {
+            await RevokeFamilyAsync(currentToken.FamilyId, now, cancellationToken);
+            throw InvalidRefreshToken();
+        }
+
+        if (currentToken.RevokedAt is not null || currentToken.ExpiresAt <= now)
+        {
+            throw InvalidRefreshToken();
+        }
+
+        var familyRoot = await _dbContext.RefreshTokens.SingleOrDefaultAsync(
+            token => token.Id == currentToken.FamilyId,
+            cancellationToken);
+        if (familyRoot is null || familyRoot.FamilyRevokedAt is not null)
         {
             throw InvalidRefreshToken();
         }
 
         var accessToken = _jwtTokenService.CreateAccessToken(currentToken.User, now);
         var replacement = _jwtTokenService.CreateRefreshToken(currentToken.User, now);
+        replacement.Entity.FamilyId = currentToken.FamilyId;
 
         currentToken.RevokedAt = now;
         currentToken.ReplacedByTokenHash = replacement.Entity.TokenHash;
         currentToken.ConcurrencyStamp = Guid.NewGuid();
+        familyRoot.ConcurrencyStamp = Guid.NewGuid();
 
         _dbContext.RefreshTokens.Add(replacement.Entity);
 
@@ -141,14 +161,74 @@ public sealed class AuthenticationService : IAuthenticationService
         }
         catch (DbUpdateConcurrencyException exception)
         {
+            await RevokeFamilyAsync(currentToken.FamilyId, DateTimeOffset.UtcNow, cancellationToken);
             throw new AuthenticationServiceException(
                 AuthenticationErrorCode.InvalidRefreshToken,
-                "Refresh token has already been used.",
+                "Refresh token is invalid or expired.",
                 innerException: exception);
         }
 
         return CreateResponse(currentToken.User, accessToken, replacement);
     });
+
+    public async Task LogoutAsync(
+        RefreshTokenRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        await _refreshTokenRequestValidator.ValidateAndThrowAsync(request, cancellationToken);
+        var tokenHash = SecureToken.Hash(request.RefreshToken);
+        var token = await _dbContext.RefreshTokens.SingleOrDefaultAsync(
+            candidate => candidate.TokenHash == tokenHash,
+            cancellationToken);
+
+        if (token is not null)
+        {
+            await RevokeFamilyAsync(token.FamilyId, DateTimeOffset.UtcNow, cancellationToken);
+        }
+    }
+
+    private async Task RevokeFamilyAsync(
+        Guid familyId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        const int maximumAttempts = 5;
+        for (var attempt = 0; attempt < maximumAttempts; attempt++)
+        {
+            _dbContext.ChangeTracker.Clear();
+            var familyRoot = await _dbContext.RefreshTokens.SingleOrDefaultAsync(
+                token => token.Id == familyId,
+                cancellationToken);
+            if (familyRoot is null)
+            {
+                return;
+            }
+
+            familyRoot.FamilyRevokedAt ??= now;
+            familyRoot.ConcurrencyStamp = Guid.NewGuid();
+
+            var activeTokens = await _dbContext.RefreshTokens
+                .Where(token => token.FamilyId == familyId && token.RevokedAt == null)
+                .ToListAsync(cancellationToken);
+            foreach (var activeToken in activeTokens)
+            {
+                activeToken.RevokedAt = now;
+                activeToken.ConcurrencyStamp = Guid.NewGuid();
+            }
+
+            try
+            {
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                return;
+            }
+            catch (DbUpdateConcurrencyException) when (attempt < maximumAttempts - 1)
+            {
+                // Reload the family after a concurrent refresh before retrying revocation.
+            }
+        }
+
+        throw new InvalidOperationException("Refresh token family could not be revoked.");
+    }
 
     private async Task<AuthenticationResponse> CreateAndPersistTokensAsync(
         ApplicationUser user,

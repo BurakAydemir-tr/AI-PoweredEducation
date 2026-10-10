@@ -38,3 +38,7 @@ export async function refresh(refreshToken: string): Promise<AuthResponse> {
 
   return response.data
 }
+
+export async function logout(refreshToken: string): Promise<void> {
+  await apiClient.post('/api/auth/logout', { refreshToken }, { timeout: 10000 })
+}
